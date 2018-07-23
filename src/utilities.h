@@ -3,6 +3,10 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
+#define maxN 			4000000 // these are number of nodes, not just number of leaves
+#define maxNameSize 	10
+#define maxBufferSize 	1000000
+
 #define GENERAL_BUFFER_SIZE                     10000
 
 // Error values

@@ -6,6 +6,8 @@
 
 #include "tree.h"
 #include "utilities.h"
+#include "options.h"
+
 
 // Global variable for quickly intializing a tree
 int adj_list[maxN][3];
@@ -196,6 +198,8 @@ int parse_tree(BT ** constrained_trees, options_t * options){
     }
     return 0;
 }
+
+int init_growing_tree(int)
 
 // INTERNAL FUNCTION IMPLEMENTATIONS
 int init(){

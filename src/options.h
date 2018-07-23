@@ -23,6 +23,19 @@ typedef struct options{
     char ** tree_names ;
 } option_t;
 
+
+typedef struct fp{
+    char * output_format;
+    char * output_name;
+    char * input_format;
+    char * input_name;
+    char * stdout;
+} fp_options;
+
+extern char[]   DEFAULT_
+
+extern fp_options default_fp_options;
+
 // Functions
 extern int read_cmd_arg(int argc,char ** argv, option_t * options);
 extern int init_options(option_t * options);

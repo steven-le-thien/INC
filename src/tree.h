@@ -2,11 +2,6 @@
 
 #ifndef TREE_H
 #define TREE_H
-
-#define maxN 			4000000 // these are number of nodes, not just number of leaves
-#define maxNameSize 	10
-#define maxBufferSize 	1000000
-
 typedef struct tree{
 	int n;  			// number of leaves in the tree
 	int root; 			// root of the tree, -1 if the tree is supposed to be unrooted
@@ -22,6 +17,6 @@ extern void tree_destructor(BT * tree); 		// null destructor
 extern BT * read_newick(char * filename); // newick constructor
 extern int is_leave(int cur_node, BT * tree);
 
-extern int 
+extern int init_growing_tree(BT * tree, int * ordering);
 
 #endif
