@@ -14,7 +14,7 @@ int adj_list[maxN][3];
 int degree[maxN];
 int parent_map[maxN];
 int is_in_building_tree[maxN];
-char * name_map[maxN][maxNameSize];
+int index_in_master_name_map[maxN];
 
 // Private functions
 int size_dfs(int node, int parent);
@@ -48,13 +48,11 @@ BT * tree_constructor(int n, int root, int ** adj_list, int * degree, int * pare
 
     tree->adj_list              = malloc(n * sizeof(int *));
     tree->degree                = malloc(n * sizeof(int));
-    tree->parent_map            = malloc(n * sizeof(int)); 
-    tree->is_in_building_tree   = malloc(n * sizeof(int));
-    tree->name_map              = malloc(n * sizeof(char *))
+    tree->index_in_master_name_map              
+                                = malloc(n * sizeof(int));
 
     for(i = 0; i < n; i++){
         tree->adj_list[i] = malloc(3 * sizeof(int));
-        tree->name_map[i] = malloc(maxNameSize * sizeof(char)); 
     }
 
     // Initialization to default values; this may or may not be override in other constructors
@@ -64,22 +62,13 @@ BT * tree_constructor(int n, int root, int ** adj_list, int * degree, int * pare
             for(j = 0; j < 3; j++)
                 tree->adj_list[i][j] = -1;
 
-        if(name_map[i]) memcpy(tree->name_map[i], name_map[i], maxNameSize * sizeof(char));
-        else name_map[i][0] = 0;
-
+        tree->index_in_master_name_map[i]
+                                    = -1;
         tree->degree[i]             = 0; 
-        tree->parent_map[i]         = -1;
-        tree->is_in_building_tree   = 0;
     }
 
     if(degree)  
         memcpy(tree->degree, degree, n * sizeof(int));
-
-    if(parent_map)  
-        memcpy(tree->parent_map, parent_map, n * sizeof(int));
-
-    if(is_in_building_tree)  
-        memcpy(tree->is_in_building_tree, is_in_building_tree, n * sizeof(int));
 
     return tree;
 }
@@ -95,10 +84,8 @@ void tree_destructor(BT * tree){
         free(tree->adj_list);
     }
 
-    if(tree->degree)                    free(tree->degree[i]);
-    if(tree->parent_map)                free(tree->parent_map[i]);
-    if(tree->is_in_building_tree)       free(tree->is_in_building_tree[i]);
-
+    if(tree->degree)                    free(tree->degree);
+    if(tree->index_in_master_name_map)  free(tree->index_in_master_name_map);
     free(tree);
 }
 
@@ -109,7 +96,7 @@ void tree_destructor(BT * tree){
 #define decr_level(node_p, node_c, max_node) do{node_c = node_p; node_p = parent_map[node_c];} while(0)
 #define incr_node(node, max_node)               node = ++max_node
 
-BT * read_newick(char * filename){
+BT * read_newick(char * filename, int * master_to_ctree_map, int * master_to_ctreeindex, int tree_idx, , int num_sequence, char ** master_name_map){
     FILE *  f;
     BT * tree;
 
@@ -144,20 +131,21 @@ BT * read_newick(char * filename){
         switch(cur_char){
             case '(': //start of a new level and start of a new node
                 incr_level(parent_node, cur_node, max_node);
-                make_parent(parent_node, cur_node);
+                make_adjacent(parent_node, cur_node);
                 cur_state = READ_NAME_STATE;
-                node_counter++;
                 break;
             case ',': // start of new node end of old node
-                save_name(cur_node, cur_name);
+                save_name(cur_node, cur_name, master_to_ctree_map, master_to_ctreeindex, tree_idx, num_sequence, master_name_map);
                 incr_node(cur_node, max_node);
-                make_parent(parent_node, cur_node);
+                make_adjacent(parent_node, cur_node);
                 cur_state = READ_NAME_STATE;
                 node_counter++;
                 break;
             case ')': // end of level
-                save_name(cur_node, cur_name);
-                decr_level(parent_node, cur_node, max_node, tree);
+                save_name(cur_node, cur_name, master_to_ctree_map, master_to_ctreeindex, tree_idx, num_sequence, master_name_map);
+                decr_level(parent_node, cur_node, max_node, tree); 
+                node_counter++;
+
                 break;
             case ':': 
                 cur_state = OTHER_STATE;
@@ -179,15 +167,16 @@ BT * read_newick(char * filename){
     return tree;
 }
 
-int parse_tree(BT ** constrained_trees, options_t * options){
+int parse_tree(BT ** constrained_trees, options_t * options, int * master_to_ctree_map, int * master_to_ctreeindex, int num_sequence, char ** master_name_map){
     int i;
 
-    constrained_trees = malloc(options->num_tree, sizeof(BT *));
+    constrained_trees = malloc(options->num_tree * sizeof(BT *));
+    master_to_ctree_map = malloc(num_sequence * sizeof(int));
 
     if(!constrained_trees)      PRINT_AND_RETURN("malloc error in parse_tree", MALLOC_ERROR);
 
     for(i = 0; i < options->num_tree; i++){
-        constrained_trees[i] = read_newick(options->tree_name[i]);
+        constrained_trees[i] = read_newick(options->tree_name[i], master_to_ctree_map, master_to_ctreeindex, i, num_sequence, master_name_map);
 
         if(!constrained_trees[i]){
             i--;
@@ -199,7 +188,36 @@ int parse_tree(BT ** constrained_trees, options_t * options){
     return 0;
 }
 
-int init_growing_tree(int)
+
+int init_in_building(int * in_building, int n){
+    int i;
+    in_building = malloc(n * sizeof(int));
+    for(i = 0; i < n; i++)
+        in_building[i] = 0;
+
+    return 0;
+}
+
+// Assuming that there is already an ordering with at least 3 nodes, create a star with 3 leaves
+int init_growing_tree(BT * tree, int * ordering, int * in_building){ 
+    int i;
+
+    // TODO: check failure here
+    tree = tree_constructor(4, -1, NULL, NULL, NULL);
+
+    make_adjacent(0, 3, tree);
+    make_adjacent(1, 3, tree);
+    make_adjacent(2, 3, tree);
+
+    for(i = 0; i < 3; i++){
+        tree->index_in_master_name_map[i] = ordering[i];
+        in_building[ordering[i]] = 1;
+    }
+    
+    
+
+    return 0;
+}
 
 // INTERNAL FUNCTION IMPLEMENTATIONS
 int init(){
@@ -211,9 +229,7 @@ int init(){
         }
 
         degree[i] = 0; 
-        parent_map[i] = -1;
-        is_in_building_tree[i] = -1;
-        name_map[i][0] = 0;
+        index_in_master_name_map[i] = -1;
     }
 }
 
@@ -259,16 +275,18 @@ int make_parent(int node_p, int node_c, BT * tree){
  * Output:  0 on success
  * Effect:  none
  */ 
-int save_name(int cur_node, char * name){
-    // printf("save_name %d %s\n", cur_node, name);
-    if(strempty(name)){
-        char buf[1000];
-        snprintf(buf, 1000, "%d", cur_node);
-        strcpy(name_map[cur_node], buf);
-    } else {
-        strcpy(name_map[cur_node], name);
+int save_name(int cur_node, char * name, int * master_to_ctree_map, int * master_to_ctreeindex, int tree_idx, int num_sequence, char ** master_name_map){
+    int i; // store the master index
+
+    for(i = 0; i < num_sequence; i++){
+        if(strcmp(name, master_name_map[i]) != 0){
+            if(i == num_sequence - 1) return -1;
+        } else break;
     }
-    strclr(name); 
+
+    master_to_ctree_map[i] = tree_idx;
+    master_to_ctreeindex[i] = cur_node;
+    index_in_master_name_map[cur_node] = i;
 
     return 0;
 }
