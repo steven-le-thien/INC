@@ -30,6 +30,6 @@ typedef struct min_heap{
 	heap_node ** heap;
 } min_heap;
 
-extern int prim(float ** adj_mat, int num_sequence, int * max_mst_weight, adj_list ** mst, int * prim_ordering);
+extern int prim(float ** adj_mat, int num_sequence, int * max_mst_weight, int * prim_ordering, int * adjacent_in_mst);
 
 #endif

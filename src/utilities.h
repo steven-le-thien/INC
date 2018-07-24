@@ -28,5 +28,8 @@
 #define PRINT_AND_RETURN(p, r)                  do{printf("%s\n", p); return r;}while(0) 
 #define PRINT_AND_EXIT(p, r, a)                 do{printf("%s\n", p); clean_up(a); return r;}while(0) 
 
+// Math utils
+#define max(a, b) (a > b ? a : b)
+
 
 #endif

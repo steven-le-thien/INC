@@ -115,21 +115,6 @@ adj_list ** adj_list_graph_constructor(int n){
 	return graph;
 }
 
-void make_adjacent(int a, int b, adj_list** graph){
-	add_edge(a, b, graph);
-	add_edge(b, a, graph);
-}
-
-void add_edge(int a, int b, adj_list** graph){
-	graph[a]->size++;
-	adj_node * node = malloc(sizeof(adj_node));
-	node->node_id = b;
-	node->next = NULL;
-
-	graph[a]->end->next = node;
-	if(graph[a]->size == 1) graph[a]->start = node;
-}
-
 int * prim_odering_constructor(int n){
 	int i;
 	int * order = malloc(n * sizeof(int));
@@ -140,19 +125,23 @@ int * prim_odering_constructor(int n){
 	return order;
 }
 
-int prim(float ** adj_mat, int num_sequence, float * max_mst_weight, adj_list ** mst, int * prim_ordering){
+int prim(float ** adj_mat, int num_sequence, float * max_mst_weight, int * prim_ordering, int * adj_in_mst){
 	min_heap * heap;
 	heap_node * head;
 	int i; 
 	int j;
+	int to_be_adjacent;
 	int prim_ordering_counter;
 	int cur_key;
 	float cur_weight;
+
 	int value_array[num_sequence];
+	int parent_array[num_sequence];
 
 	*max_mst_weight = 0.0;
-	mst = adj_list_graph_constructor(num_sequence);
-	prim_ordering = prim_odering_constructor;
+	prim_ordering = prim_odering_constructor(num_sequence);
+	adj_in_mst = prim_odering_constructor(num_sequence);
+
 	prim_ordering_counter = 0;
 
 	heap = heap_constructor(num_sequence);
@@ -174,12 +163,15 @@ int prim(float ** adj_mat, int num_sequence, float * max_mst_weight, adj_list **
 		for(i = 0; i < num_sequence; i++){
 			if(in_heap(i) && adj_mat[cur_key][i] < value_array[i]){
 				value_array[i] = adj_mat[cur_key][i];
-				make_adjacent(i, cur_key. mst);
+				parent_array[i] = cur_key;
 				update(heap, i, value_array[i]);
 				j = i;
 			}
 		}
 		*max_mst_weight = (*max_mst_weight) < adj_mat[cur_key][j] ? adj_mat[cur_key][j] : (*max_mst_weight);
-		prim_ordering[prim_ordering_counter++] = j;
+		prim_ordering[prim_ordering_counter] = j;
+		adj_in_mst[prim_ordering_counter] = parent[j];
+
+		prim_ordering_counter++; 
 	}
 }
