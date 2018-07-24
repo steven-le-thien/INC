@@ -12,6 +12,7 @@
 #include "stat.h"
 #include "dist.h"
 #include "prim.h"
+#include "c_inc.h"
 
 
 // Implementation of constrained version of the INC algorithm. 
@@ -19,43 +20,11 @@
 int main(int argc, char ** argv){
     // Meta variables
     option_t    options;
-    BT **       constraint_trees;
-    BT *        growing_tree;
-    float **    adjacency_mat; // distance matrix
-    int num_sequence;
 
-
-    // Mapping variables
-    int *       master_to_ctree_map;
-    int *       master_to_ctreeindex;
-    char **     master_name_map;
-
-    // Prim mst variable
-    int *       prim_ordering;
-    int *       adj_in_mst;
-    int max_mst_weight;
-
-    // Tree growing variables
-    int *       in_building; // for O(1) look up: 0 if the node is not in the growing tree, 
-                             // 1 if the node is in the first bp, 2 if the node is in the second bipartition
-    
-    // Voting variables
-    int *       vote; 
-    int *       vote_first_endpoint;
-    int *       vote_second_endpoint;
-
-    int         lca_in_constraint;
-    int         lca_parent_in_constraint;
-
-    int         first_lca_in_growing;
-    int         first_lca_parent_in_growing;
-
-    int         second_lca_in_growing;
-    int         second_lca_parent_in_growing;
-
-    // Taxon insertion variables
-    int         addition_child;
-    int         addition_parent;
+    INC_GRP     meta;
+    MAP_GRP     map;
+    MST_GRP     mst;
+    VOTE_GRP    vote;
 
     // Loop counter variables
     int         i; //loop counter
@@ -65,39 +34,67 @@ int main(int argc, char ** argv){
 
     // Other variables
     int         placeholder; 
-    int         printer_counter;
 
     // Parse options
     printf("reading in options...\n");
-    init_options(&options);
-    read_cmd_arg(argc, argv, &options);
+
+    if(init_options(&options)               != SUCCESS)         PRINT_AND_EXIT("init_options failed in main\n", GENERAL_ERROR);
+    if(read_cmd_arg(argc, argv, &options)   != SUCCESS)         PRINT_AND_EXIT("read_cmd_arg failed in main\n", GENERAL_ERROR);
 
     // Getting the distance matrix
     printf("parsing initial matrix and tree...\n");
-    parse_distance_matrix(master_name_map, adjacency_mat, &options, &num_sequence);
+    if(parse_distance_matrix(&meta, &map, &options) 
+                                            != SUCCESS)         PRINT_AND_EXIT("parse_distance_matrix failed in main\n", GENERAL_ERROR);
 
     // At this stage, all tree names should be in options->tree_name. It should be ok to parse them all at once since together they have at most 4M nodes
-    parse_trees(constraint_trees, &options, master_to_ctree_map, master_to_ctreeindex, num_sequence, master_name_map);
+    if(parse_trees(&meta, &map, &options)   != SUCCESS)         PRINT_AND_EXIT("parse tree failed in main\n", GENERAL_ERROR);
+
 
     // Compute the MST 
     printf("computing the mst...\n");
-    prim(adjacency_mat, num_sequence, &max_mst_weight, prim_ordering, adj_in_mst);
+    if(prim(adjacency_mat, num_sequence, &max_mst_weight, prim_ordering, adj_in_mst)
+                                            != SUCCESS)         PRINT_AND_EXIT("prim algorithm failed in main\n", GENERAL_ERROR);
 
     // Initialize growing tree using the first 3 taxa in the ordering
     // TODO: check if there are less than 3 taxa 
     printf("initializing the growing tree\n");
-    init_in_building(in_building, num_sequence);
-    init_growing_tree(growing_tree, prim_ordering, in_building, adj_in_mst[2]);
+    if(init_in_building(in_building, num_sequence) 
+                                            != SUCCESS)         PRINT_AND_EXIT("init_in_building failed in main\n", GENERAL_ERROR); 
+    if(init_growing_tree(growing_tree, prim_ordering, in_building, adj_in_mst[2])
+                                            != SUCCESS)         PRINT_AND_EXIT("init_growing_tree failed in main\n", GENERAL_ERROR);
 
     printf("building the tree, current iteration is 2");
     // Loop through Prim's ordering
+
+    if(serial_main_loop()                  != SUCCESS)          PRINT_AND_EXIT("serial_main_loop failed in main\n", GENERAL_ERROR);
+    
+
+    printf("\noutputing the tree...\n");
+    // Report the growing tree
+    write_newick(growing_tree, options->output_name);
+
+    printf("done, cleaning up\n");
+    // Clean up
+    destroy_options(&options);
+}
+
+int serial_main_loop(int num_sequence, int * in_building, BT * growing_tree, int * prim_ordering){
+    int i; //loop counter
+
+    // Voting variable
+    int * vote;
+
+    // Other misc. variables
+    int printer_counter;
+
     for(i = 3; i < num_sequence; i++){
         // Print current iteration to terminal, this is slow so turn off for large dataset
-        for(printer_counter = 0; printer_counter < (int)(log10(i - 1)); printer_counter++){
+        for(printer_counter = 0; printer_counter < (int)(log10(i - 1)); printer_counter++)
             printf("\b");
-        }
+        
         printf("%d", i);
-        // Clear latent
+
+        // Clear latent variables
         memset(in_building, 0, num_sequence * sizeof(int));
         memset(vote, 0, (num_sequence - 1) * sizeof(int));
 
@@ -139,12 +136,5 @@ int main(int argc, char ** argv){
         // Attach to the growing subtree
         attach_leaf_to_edge(growing_tree, prim_ordering[i], addition_edge_parent, additional_edge_child, adj_in_mst[i]);
     }
-
-    printf("\noutputing the tree...\n");
-    // Report the growing tree
-    write_newick(growing_tree, options->output_name);
-
-    printf("done, cleaning up\n");
-    // Clean up
-    destroy_options(&options);
+    return 0;
 }
