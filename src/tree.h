@@ -7,10 +7,8 @@
 
 // Initializations
 extern int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options);
-extern int init_growing_tree(BT * tree, int * ordering, int * in_building, int num_sequence, int adj_in_mst);
-extern int init_in_building(int * in_building, int n);
+extern int init_growing_tree(INC_GRP * meta, MST_GRP * mst);
 
 // Modifiers
-extern int attach_leaf_to_edge(BT * growing_tree, int x, int addition_edge_parent, int additional_edge_child, int adj_in_mst);
-
+extern int attach_leaf_to_edge(INC_GRP * meta, MST_GRP * mst, VOTE_GRP * vote, int i);
 #endif

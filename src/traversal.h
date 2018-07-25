@@ -1,8 +1,13 @@
 #ifndef TRAVERSAL_H
 #define TRAVERSAL_H
 
-extern int dfs_lca_change(int node, int parent, BT * tree, int * dp, int * in_building, int mode);
-extern void dfs_preorder(int node, int parent, BT * tree, int * in_building, int flag);
-extern void bfs_vote(BT * tree, int valid_start, int valid_end, int valid_start_parent, int * vote, int * edge_child, int * edge_parent, int n, float ** d, int x, float q0);
-extern int find_addition_edge(int * vote, int * edge_child, int *edge_parent, int * additional_edge_child, int * addition_edge_parent, int num_edges);
+#include "c_inc.h"
+
+#define clear_vote(vote) memset(vote->vote, 0, 4 * vote->n_taxa * sizeof(int));
+
+extern int init_vote(INC_GRP * meta, VOTE_GRP * vote);
+extern int find_bipartition(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int i);
+extern int find_valid_subtree(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote);
+extern int bfs_vote(INC_GRP * meta, MST_GRP * mst, VOTE_GRP * vote, int i);
+extern int find_addition_edge(INC_GRP * meta, VOTE_GRP * vote);
 #endif 

@@ -37,9 +37,9 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
     map->master_to_ctree    = malloc(meta->n_taxa  * sizeof(int));
     map->master_to_cidx     = malloc(meta->n_taxa  * sizeof(int))
 
-    if(!meta->ctree)            PRINT_AND_RETURN("malloc failed for constraint trees in parse_tree", MALLOC_ERROR);
-    if(!map->master_to_ctree)   PRINT_AND_RETURN("malloc failed for master_to_ctree in parse_tree", MALLOC_ERROR);
-    if(!map->master_to_cidx)    PRINT_AND_RETURN("malloc failed for master_to_cidx in parse_tree", MALLOC_ERROR);
+    if(!meta->ctree)            PRINT_AND_RETURN("malloc failed for constraint trees in parse_tree\n", MALLOC_ERROR);
+    if(!map->master_to_ctree)   PRINT_AND_RETURN("malloc failed for master_to_ctree in parse_tree\n", MALLOC_ERROR);
+    if(!map->master_to_cidx)    PRINT_AND_RETURN("malloc failed for master_to_cidx in parse_tree\n", MALLOC_ERROR);
 
     // Init
     for(i = 0; i < meta->n_taxa; i++){
@@ -55,72 +55,88 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
 }
 
 
-int init_in_building(int * in_building, int n){
-    int i;
-    in_building = malloc(n * sizeof(int));
-    for(i = 0; i < n; i++)
-        in_building[i] = 0;
-
-    return 0;
-}
-
-// Assuming that there is already an ordering with at least 3 nodes, create a star with 3 leaves
-int init_growing_tree(BT * tree, int * ordering, int * in_building, int num_sequence, int adjacent_in_mst){ 
+/* Creating a 3-leaf star from the firt 3 nodes visited in the Prim's ordering of the mst
+ * Input:       meta        meta variables, including the pointers to growing tree in memory
+ *              mst         mst variables, including the prim ordering and the mst itself
+ * Output: 0 on success, ERROR otherwise
+ * Effect: allocate some memories, build some trees, init the growing tree and visited array in meta
+ */
+int init_growing_tree(INC_GRP * meta, MST_GRP * mst){ 
     int i;
 
-    // TODO: check failure here
-    tree = tree_constructor(4 * num_sequence,  NULL, NULL, NULL); // allocate the maximum number of nodes for mallocation to reserve enough space for tree addition
+    // Check that there must be at least 3 leaves
+    if(meta->n_taxa < 3)                            PRINT_AND_RETURN("there are less than 3 taxa, the tree is trivial\n", GENERAL_ERROR);
 
-    // Override tree logistics since there are only 4 nodes in the tree, the rest can be viewed as singletons
-    tree->n = 4;
+    // Meta initialization
+    meta->visited = malloc(meta->n_taxa * sizeof(int));
+    if(!meta->visited)                              PRINT_AND_RETURN("malloc failed for meta->visited in init_growing_tree\n", GENERAL_ERROR);
+    memset(meta->visited, 0, meta->n_taxa * sizeof(int));
 
-    make_adjacent(0, 3, tree);
-    make_adjacent(1, 3, tree);
-    make_adjacent(2, 3, tree);
+    // Growing tree initialization
+    meta->gtree = tree_constructor(4 * meta->n_taxa,  NULL, NULL, NULL); // allocate the maximum number of nodes for mallocation to reserve enough space for tree addition
+    if(!meta->gtree)                                PRINT_AND_RETURN("tree construction failed in init_growing_tree\n", GENERAL_ERROR);
 
+    // Override tree logistics since there are only 4 real nodes in the tree, the rest can be viewed as singletons
+    meta->gtree->n_node = 4;
+
+    if(make_adjacent(0, 3, meta->gtree) != SUCCESS) PRINT_AND_RETURN("make_adjacent failed in init_growing tree\n", GENERAL_ERROR);
+    if(make_adjacent(1, 3, meta->gtree) != SUCCESS) PRINT_AND_RETURN("make_adjacent failed in init_growing tree\n", GENERAL_ERROR);
+    if(make_adjacent(2, 3, meta->gtree) != SUCCESS) PRINT_AND_RETURN("make_adjacent failed in init_growing tree\n", GENERAL_ERROR);
+
+    // Init tree variables  
     for(i = 0; i < 3; i++){
-        tree->master_idx_map[i] = ordering[i];
-        in_building[ordering[i]] = 1;
+        meta->gtree->master_idx_map[i] = mst->prim_ord[i];
+        meta->visited[mst->prim_ord[i]] = 1;
 
-        tree->adj_list[3][i].dest_sample = tree->adj_list[i][3].src_sample = i;
+        meta->gtree->adj_list[3][i].sample = i;
     }
     
-    tree->adj_list[3][0].src_sample = tree->adj_list[0][3].dest_sample = 1;
-    tree->adj_list[3][1].src_sample = tree->adj_list[1][3].dest_sample = 0;
-
-
-    // TODO: figure out how to set this efficiently
-    tree->adj_list[3][2].src_sample = tree->adj_list[2][3].dest_sample = adjacent_in_mst;
-
+    // This is a bit tricky, we need to find adjacent nodes in the mst
+    meta->gtree->adj_list[0][3].sample = 1; // fist vertex in prim is obviously connected to second
+    meta->gtree->adj_list[1][3].sample = 0; // vice versa
+    meta->gtree->adj_list[2][3].sample = mst->prim_par[2] == mst->prim_ord[0] ? 0 : 1; // check if the parent of 3rd vertex in mst is adjacent to 0 or 1
 
     return 0;
 }
 
+int attach_leaf_to_edge(INC_GRP * meta, MST_GRP * mst, VOTE_GRP * vote, int i){
+    return attach_leaf_to_edge_impl(meta->gtree,
+                                    mst->prim_ord[i], 
+                                    vote->ins.p,
+                                    vote->ins.c,
+                                    mst->print_par[i]);
+}
 
-int attach_leaf_to_edge(BT * growing_tree, int x, int addition_edge_parent, int additional_edge_child, int adjacent_in_mst){
+// INTERNAL FUNCTION IMPLEMENTATIONS
+int attach_leaf_to_edge_impl(BT * growing_tree, int x, int addition_edge_parent, int additional_edge_child, int adjacent_in_mst){
     // Changing tree logistics (if this fails or terminate in the middle of some process then we are screwed)
     // Because of the way we mallocate the growing tree, there are already memory for the extra 2 nodes 
     growing_tree->n += 2;
 
     // Subdivide the edge
-    swap_adajcency(additional_edge_parent, growing_tree->n - 2, additional_egde_child, growing_tree);
-    swap_adajcency(additional_edge_child, growing_tree->n - 2, additional_edge_parent, growing_tree);
-    make_adjacent(growing_tree->n - 1, growing_tree->n - 2, growing_tree);
+    if(swap_adajcency(additional_edge_parent, growing_tree->n - 2, additional_egde_child, growing_tree)
+                    != SUCCESS) PRINT_AND_RETURN("first swap_adajcency failed in attach_leaf_to_edge_impl\n", GENERAL_ERROR);
+
+    if(swap_adajcency(additional_edge_child, growing_tree->n - 2, additional_edge_parent, growing_tree)
+                    != SUCCESS) PRINT_AND_RETURN("second swap_adajcency failed in attach_leaf_to_edge_impl\n", GENERAL_ERROR);
+
+    if(make_adjacent(growing_tree->n - 1, growing_tree->n - 2, growing_tree) 
+                    != SUCCESS) PRINT_AND_RETURN("make_adjacent failed in attach_leaf_to_edge_impl\n", GENERAL_ERROR);
 
     // Set up the leaf sample properly
     growing_tree->adj_list[growing_tree->n - 2][growing_tree->n - 1].dest_sample = growing_tree->n - 1;
     growing_tree->adj_list[growing_tree->n - 1][growing_tree->n - 2].dest_sample = adjacent_in_mst;
 
+    return 0;
 }
 
-// INTERNAL FUNCTION IMPLEMENTATIONS
 BT * tree_constructor(int n, BT_edge ** adj_list, int * degree, int * parent_map, char ** name_map){
     // The arrays mayeb null (in case of null construction)
     int i, j;
 
     BT * tree =     malloc(sizeof(BT)); 
 
-    if(!tree)           PRINT_AND_RETURN("malloc error in tree_constructor", NULL);
+    if(!tree)           PRINT_AND_RETURN("malloc error in tree_constructor\n", NULL);
 
     tree->n                     = n;
 
@@ -178,7 +194,7 @@ BT * read_newick(MAP_GRP map, char * filename, int tree_idx){
 
     // File opening
     f = freopen(filename, "r");
-    if(!f)                      PRINT_AND_RETURN("fail to open in read_newick file",    NULL);
+    if(!f)                      PRINT_AND_RETURN("fail to open in read_newick file\n",    NULL);
 
     // Intialization
     cur_state       = READ_NAME_STATE;
@@ -244,15 +260,10 @@ int check(int node_a, BT * tree){
     else return 0;
 }
 
-int delete_from_adj_list(BT_edge * list, int list_size, int item){
-    int i;
-    f
-}
-
 // Delete a-c and make a-b, b-c 
 int swap_adajcency(int nod_a, int node_b, int node_c, BT* tree){
     int i, j;
-    if(!check(node_a) || !check(node_b))  PRINT_AND_RETURN("node out of range in make_non_adjacent", GENERAL_ERROR);
+    if(!check(node_a) || !check(node_b))  PRINT_AND_RETURN("node out of range in swap_adajcency", GENERAL_ERROR);
 
     if(tree){
         for(i = 0; i < tree->deree[node_a]; i++)

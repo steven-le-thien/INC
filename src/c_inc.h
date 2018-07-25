@@ -5,10 +5,9 @@ typedef struct inc_grp{
 	int 		n_taxa;
 	int 		n_ctree;
 
-	BT * 		g_tree;
-	BT **		c_tree;		// n_ctree-length array of constraint trees
-	int * 		ordering; 	// n_taxa-length array of insertion order of leaf taxon into the tree indexed through the master index
-	int * 		visited;	// n_taxa-lenght array of visted taxa in the building tree 	
+	BT * 		gtree;
+	BT **		ctree;		// n_ctree-length array of constraint trees
+	int * 		visited;	// n_taxa-lenght array of visted taxa in the building tree, this is in the master indexing scheme
 						
 	float ** 	d; // n_taxa by n_taxa array of distance matrix
 } INC_GRP;
@@ -37,7 +36,10 @@ typedef struct s_edge{
 typedef struct vote{
 	int 	n_taxa;	
 	int * 	vote;			// at-most-4-n_taxa length array storing the vote for each edge in the growing tree. this is allocated at maximum (4 * num_sequence) but only a few entried can be valid
+	int * 	edge_c;
+	int * 	edge_p;
 
+	// WARNING: redo initialization if the struct changes
 	S_EDGE 	valid_st; 		// the valid 'component', indexed in growing tree scheme
 	S_EDGE 	c_lca; 			// lca of taxa in the induced constraint tree, this follows the constraint's indexing scheme
 	S_EDGE 	st_lca;			// lca of taxa in the growing tree following the first bipartition, this follows the growing tree's indexing scheme
@@ -45,6 +47,7 @@ typedef struct vote{
 
 	S_EDGE 	ins;			// insertion edge (edge with the most vote), this follws the growing tree's indexing scheme
 
+	int 	ctree_idx; 
 } VOTE_GRP;
 
 typedef struct ins{

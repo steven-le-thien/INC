@@ -36,6 +36,7 @@
 
 // Math utils
 #define max(a, b) (a > b ? a : b)
+#define INT_MAX 								2147483647
 
 
 #endif
