@@ -3,6 +3,8 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
+#define DEBUG 		1
+
 #define MAXN 									4000000 // these are number of nodes, not just number of leaves
 #define MAX_NAME_SIZE 							10
 #define MAX_BUFFER_SIZE					 		1000000
@@ -27,16 +29,18 @@
                                                     char buf[2];\
                                                     buf[0] = c;\
                                                     buf[1] = 0;\
-                                                    strcat(a, c);\
+                                                    strcat(a, buf);\
                                                 } while(0);
 
 // Print utils
 #define PRINT_AND_RETURN(p, r)                  do{printf("%s\n", p); return r;}while(0) 
-#define PRINT_AND_EXIT(p, r, a)                 do{printf("%s\n", p); clean_up(a); return r;}while(0) 
+#define PRINT_AND_EXIT(p, r)                 	do{printf("%s\n", p); return r;}while(0) 
 
 // Math utils
 #define max(a, b) (a > b ? a : b)
-#define INT_MAX 								2147483647
+#define INT_MAX 								10000000
+#define LN2										1.4426950408
+#define EPS 									1e-7                                           
 
 
 #endif

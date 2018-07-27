@@ -11,10 +11,10 @@
 // Constants
 int DEFAULT_NUM_OPTIONS = 3;
 
-char * DEFAULT_FP_OUTPUT_FORMAT    = "-O phylip";
-char * DEFAULT_FP_OUTPUT_NAME      = "defaultjob.distance_matrix.phy";
-char * DEFAULT_FP_INPUT_FORMAT     = "-I fasta";
-char * DEFAULT_FP_STDOUT           = "defaultjob.fastphylo.stdout"
+char  DEFAULT_FP_OUTPUT_FORMAT[]    = "-O phylip";
+char  DEFAULT_FP_OUTPUT_NAME[]      = "defaultjob.distance_matrix.phy";
+char  DEFAULT_FP_INPUT_FORMAT[]     = "-I fasta";
+char  DEFAULT_FP_STDOUT[]           = "defaultjob.fastphylo.stdout";
 
 fp_options default_fp_options = {DEFAULT_FP_OUTPUT_FORMAT, DEFAULT_FP_OUTPUT_NAME, DEFAULT_FP_INPUT_FORMAT, NULL, DEFAULT_FP_STDOUT};
 
@@ -24,10 +24,10 @@ fp_options default_fp_options = {DEFAULT_FP_OUTPUT_FORMAT, DEFAULT_FP_OUTPUT_NAM
  * Output   0 on success, ERROR otherwise
  * Effect   set fields in option struct
  */
-int find_arg_index(char * flag, char * content, option_t * options, int i, int argc, char ** argv){
+int find_arg_index(char * flag, char * content, option_t * options, int * i, int argc, char ** argv){
     int j;
     if(strcmp(flag, "-i") == 0){//reading input name
-        options->input_index = i;
+        options->input_index = (*i);
         options->input_name = malloc(strlen(content));  
 
         if(!options->input_name)        
@@ -36,7 +36,7 @@ int find_arg_index(char * flag, char * content, option_t * options, int i, int a
             strcpy(options->input_name, content);
 
     } else if(strcmp(flag, "-o") == 0){
-        options->output_index = i;
+        options->output_index = (*i);
         options->output_name = malloc(strlen(content));
 
         if(!options->output_name)       
@@ -45,19 +45,20 @@ int find_arg_index(char * flag, char * content, option_t * options, int i, int a
             strcpy(options->output_name, content);
 
     } else if(strcmp(flag, "-t") == 0){
-        options->tree_index = i;
-        options->num_tree = 0;
+        options->tree_index = (*i);
+        options->num_trees = 0;
 
         while(1){
-            if(i + options->num_tree + 1 >= argc || argv[i + options->num_tree + 1][0] == '-') break;
-            else options->num_tree++;
+            if((*i) + options->num_trees + 1 >= argc || argv[(*i) + options->num_trees + 1][0] == '-') break;
+            else options->num_trees++;
         }
 
-        options->tree = malloc(options->num_tree * sizeof(char*));
-        for(j = 0; j < options->num_tree; j++){
-            options->tree[j] = malloc(strlen(argv[i + j + 1]));
-            strcpy(options->tree[j], &argv[i + j + 1]);
+        options->tree_names = malloc(options->num_trees * sizeof(char*));
+        for(j = 0; j < options->num_trees; j++){
+            options->tree_names[j] = malloc(strlen(argv[(*i) + j + 1]));
+            strcpy(options->tree_names[j], argv[(*i) + j + 1]);
         }
+        (*i) += options->num_trees ;
 
     } else PRINT_AND_RETURN("unrecognized argument", GENERAL_ERROR); 
 
@@ -76,7 +77,7 @@ int read_cmd_arg(int argc, char ** argv, option_t * options){
     // Loop through command
     for(int i = 0; i < argc; i++)
         if(i != 0 && i % 2) //currently reading a flag
-            if(find_arg_index(argv[i], argv[i + 1], options, i, argc, argv) != SUCCESS)
+            if(find_arg_index(argv[i], argv[i + 1], options, &i, argc, argv) != SUCCESS)
                 PRINT_AND_RETURN("failed reading of the arguments", GENERAL_ERROR);
 
     return 0;
@@ -89,7 +90,7 @@ int read_cmd_arg(int argc, char ** argv, option_t * options){
  */
 int init_options(option_t * options){
     options->num_options = DEFAULT_NUM_OPTIONS;
-    options->num_tree = 0;
+    options->num_trees = 0;
 
     options->input_index = -1;
     options->output_index = -1;
@@ -97,7 +98,7 @@ int init_options(option_t * options){
 
     options->input_name = NULL;
     options->output_name = NULL;
-    options->tree_name = NULL;
+    options->tree_names = NULL;
 
     return 0;
 }
@@ -114,10 +115,10 @@ void destroy_options(option_t * options){
     if(!options) return;
     if(options->input_name)     free(options->input_name);
     if(options->output_name)    free(options->output_name);
-    for(i = 0; i < num_tree; i++){
-        free(options->tree_name[i])
+    for(i = 0; i < options->num_trees; i++){
+        free(options->tree_names[i]);
     }
-    if(options->tree_name)        free(options->symfrac);
+    // if(options->tree_names)        free(options->symfrac);
 
-    options->input_index = options->output_index = options->symfrac_index = 0;
+    // options->input_index = options->output_index = options->symfrac_index = 0;
 }

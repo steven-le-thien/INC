@@ -1,5 +1,19 @@
-#ifndef DIST_H
-#define DIST_H
+#ifndef C_INC_H
+#define C_INC_H
+
+// Trees
+typedef struct edge{ // this is an adjacency list edge, meaning that it is directed and that the source is know when the structure is accessed
+	int 	dest; 			// destination 
+	int 	master_idx;		// indexing into the vote array (only for the voting), it maybe possible to remove this field
+	int 	sample; 		// leaf sample at the destination
+} BT_edge;
+
+typedef struct tree{
+	int n_node;  					// number of nodes in the tree
+	BT_edge ** adj_list; 			// n_node array of adjacent nodes
+	int * degree; 					// n_node array of degee
+	int * master_idx_map;			// n_node indexing from the constrained tree's scheme to the master scheme, this is not a surjection
+} BT;
 
 typedef struct inc_grp{
 	int 		n_taxa;
@@ -17,6 +31,7 @@ typedef struct mapping{
 
 	int * 	master_to_ctree; 	// n_taxa length array mapping the master indexing scheme to the index of the binary constraint tree
 	int *	master_to_cidx;  	// n_taxa length array mapping the master indexing scheme to the index within the binary constraint tree
+	int * 	master_to_gidx;
 	char **	master_to_name;		// n_taxa length array mapping the master indexing scheme to its name
 } MAP_GRP;
 
@@ -50,23 +65,27 @@ typedef struct vote{
 	int 	ctree_idx; 
 } VOTE_GRP;
 
-typedef struct ins{
-	int 	c;				// insertion child
-	int 	d
-} INS_GRP;	
+typedef struct options{
+    int num_options;
+    int num_trees;
 
-// Trees
-typedef struct edge{ // this is an adjacency list edge, meaning that it is directed and that the source is know when the structure is accessed
-	int 	dest; 			// destination 
-	int 	master_idx;		// indexing into the vote array (only for the voting), it maybe possible to remove this field
-	int 	sample; 		// leaf sample at the destination
-} BT_edge;
+    int input_index;
+    char * input_name;
 
-typedef struct tree{
-	int n_node;  					// number of nodes in the tree
-	BT_edge * adj_list[3]; 			// n_node array of adjacent nodes
-	int * degree; 					// n_node array of degee
-	int * master_idx_map;			// n_node indexing from the constrained tree's scheme to the master scheme, this is not a surjection
-} BT;
+    int output_index;
+    char * output_name;
+
+    int tree_index;
+    char ** tree_names ;
+} option_t;
+
+
+typedef struct fp{
+    char * output_format;
+    char * output_name;
+    char * input_format;
+    char * input_name;
+    char * stdout;
+} fp_options;
 
 #endif

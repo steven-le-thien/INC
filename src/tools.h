@@ -7,6 +7,9 @@
 
 const static int CMD_BUFFER_SIZE        = (int) 1e6;
 
-extern int fastphylo_job(fastphylo_job * options);
+extern int fastphylo_job(fp_options * options);
+extern int constraint_inc(int argc);
+extern int fasttree_job(option_t * options);
+extern int upp_job(option_t * options);
 
 #endif

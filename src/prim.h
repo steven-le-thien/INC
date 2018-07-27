@@ -1,6 +1,8 @@
 #ifndef PRIM_H
 #define PRIM_H
 
+#include "c_inc.h"
+
 typedef struct heap_node{
 	int key;
 	int value;

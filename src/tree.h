@@ -8,7 +8,7 @@
 // Initializations
 extern int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options);
 extern int init_growing_tree(INC_GRP * meta, MST_GRP * mst);
-
+extern int write_newick(BT * tree, char * filename, char ** name_map);
 // Modifiers
-extern int attach_leaf_to_edge(INC_GRP * meta, MST_GRP * mst, VOTE_GRP * vote, int i);
+extern int attach_leaf_to_edge(INC_GRP * meta,  MAP_GRP * map,MST_GRP * mst, VOTE_GRP * vote, int i);
 #endif

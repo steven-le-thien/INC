@@ -35,6 +35,9 @@ int 			heapify(min_heap * heap, int i);
  * Effect: allocate some memories, build some trees, open some files, init 2 arrays in map and 1 in meta 
  */
 int prim(INC_GRP * meta, MST_GRP * mst){
+																								#if DEBUG 
+																									int dflag = 0;
+																								#endif
 	// Heap variables
 	min_heap * heap;
 	heap_node * head;
@@ -45,7 +48,7 @@ int prim(INC_GRP * meta, MST_GRP * mst){
 	int cur_key;
 
 	// Temporary stack array
-	int v_arr[meta->n_taxa];
+	float v_arr[meta->n_taxa];
 
 	// Mst initialization
 	mst->n_taxa 			= meta->n_taxa; 
@@ -53,46 +56,97 @@ int prim(INC_GRP * meta, MST_GRP * mst){
 	mst->prim_ord 			= malloc(mst->n_taxa * sizeof(int));
 	mst->prim_par 			= malloc(mst->n_taxa * sizeof(int)); 
 
-	if(!prim_ord || !prim_par) 		PRINT_AND_RETURN("malloc failed to init mst in prim\n", MALLOC ERROR);
-	for(i = 0; i < n_taxa; i ++){
-		mst->prim_ord = -1;
-		mst->prim_par = -1;
+	if(!mst->prim_ord || !mst->prim_par) 		PRINT_AND_RETURN("malloc failed to init mst in prim\n", MALLOC_ERROR);
+	for(i = 0; i < meta->n_taxa; i ++){
+		mst->prim_ord[i] = -1;
+		mst->prim_par[i] = -1;
 	}
 
 	// Heap initialization
-	heap = heap_constructor(mst->n_taxa)  	
+	heap = heap_constructor(mst->n_taxa);	
 	if(!heap) 						PRINT_AND_RETURN("heap initialization failed in prim\n", MALLOC_ERROR);
 	for(i = 0; i < mst->n_taxa; i++){
 		v_arr[i] = INT_MAX; // large number
-		get_node(i) 	= heap_node_constructor(v_arr[i], i);
+		get_node(i) 	= heap_node_constructor(i ? v_arr[i] : 0, i);
 		if(!get_node(i)) 			PRINT_AND_RETURN("node initialization failed in prim\n", MALLOC_ERROR);
 		get_pos(i)		= i;
 	}
 
 	// Loop initialization
 	prim_ordering_counter = 0;
-	value_array[0] = 0;
+	v_arr[0] = 0;
 	heap->size = mst->n_taxa;
 
 	// Prim's MST
 	while(heap->size){
+																							#if DEBUG 
+ 																								//checking that heap property is always maintained at the root at each iteration\n"); 
+																								for(i = 1; i < heap->size; i++){
+																									if(heap->heap[0]->value > heap->heap[i]->value)
+																										dflag++;
+
+																								}
+
+																							#endif
 		head = pop_heap(heap);
 		if(!head) 					PRINT_AND_RETURN("heap popping failed in prim\n", GENERAL_ERROR);
 		cur_key = head->key;
 
 		for(i = 0; i < mst->n_taxa; i++){
-			if(in_heap(i) && meta->d[cur_key][i] < v_arr[i]){
+			if(in_heap(i) && meta->d[cur_key][i] - v_arr[i] < EPS && i != cur_key){
 				v_arr[i] = meta->d[cur_key][i];
-				mst_prim_par[i] = cur_key;
-				if(update(heap, i, value_array[i]) != SUCCESS) 
+				mst->prim_par[i] = cur_key;
+				if(update(heap, i, v_arr[i]) != SUCCESS) 
 									PRINT_AND_RETURN("updating heap value failed in prim\n", GENERAL_ERROR);
 				j = i;
-			}
+			}  
 		}
 		mst->max_w = max(mst->max_w, meta->d[cur_key][j]); 
-		mst->prim_ord[prim_ordering_counter++]; 
+		mst->prim_ord[prim_ordering_counter++] = cur_key; 
 	}
+																							#if DEBUG 
+ 																								if(!dflag) printf("debug: heap property is good throughout at the root\n");
+																								else printf("debug: heap value is wrong, flag is %d\n", dflag);
 
+																								printf("debug: the following print out prim's ordering\n");
+																								for(i = 0; i < meta->n_taxa; i++)
+																									printf("%d ", mst->prim_ord[i]);
+																								printf("\n");
+
+																								printf("debug: the following print out prim's tree (parenting)\n");
+																								for(i = 0; i < meta->n_taxa; i++)
+																									printf("%d ", mst->prim_par[i]);
+																								printf("\n");
+																								printf("debug: test: the prim ordering is unique\n");
+																								dflag = 0;
+																								for(i = 0; i < meta->n_taxa; i++)
+																									for(j = 0; j < meta->n_taxa; j++)
+																										if(mst->prim_ord[i] == mst->prim_ord[j] && i != j)
+																											dflag ++;
+																								if(!dflag) printf("pass test\n");
+																								else printf("failed test with flag %d\n", dflag);
+
+																								printf("debug: small test: if someone is A's parent's, it must be after A \n");
+																								dflag = 0;
+																								for(i = 1; i < meta->n_taxa; i++){
+																									int parent = mst->prim_par[i];
+																								    int iflag = 0;
+
+																									for(j = 0; j < meta->n_taxa; j++){
+																										if(mst->prim_ord[j] == i){
+																											if(iflag){
+																												iflag++; // this is fine
+																											} else dflag++;  // this is not
+																										}
+																										if(mst->prim_ord[j] == parent){
+																											if(iflag) dflag++; 
+																										    else iflag++;
+																										}
+																									}
+																								}
+																								if(!dflag) printf("pass test\n");
+																								else printf("failed test with flag %d\n", dflag);
+																							#endif
 	return 0;
 }
 
@@ -127,12 +181,14 @@ min_heap * heap_constructor(int c){
 
 int swap_node(int a, int b, min_heap * heap){
 	if(!heap) PRINT_AND_RETURN("heap is NULL in swap node\n", GENERAL_ERROR);
+	get_pos(get_key(a)) = b;
+	get_pos(get_key(b)) = a;
+
 	heap_node * tmp = get_node(a);
 	get_node(a) = get_node(b);
 	get_node(b) = tmp;
 
-	get_pos(get_key(a)) = b;
-	get_pos(get_key(b)) = a;
+
 
 	return 0;
 }
@@ -166,12 +222,13 @@ int heapify(min_heap * heap, int i){
 heap_node * pop_heap(min_heap * heap){
 	if(!heap->size) return NULL;
 
+	heap_node * tmp = get_node(0);
+
 	// Swap the first and the last node, decrease the size of the heap and heapify the new root if nec.
 	if(swap_node(root_idx, last_node_index, heap) 	!= SUCCESS) PRINT_AND_RETURN("swap node failed in pop_head\n", NULL);
 	heap->size--;
 	if(heapify(heap, root_idx) 						!= SUCCESS) PRINT_AND_RETURN("heapify faield in pop_head\n", NULL);
-
-	return get_node(last_node_index); // this is the old node
+	return tmp; // this is the old node
 }
 
 int update(min_heap * heap, int key, int new_value){
@@ -180,7 +237,7 @@ int update(min_heap * heap, int key, int new_value){
 
 	// Maintain heap property by explicit heapify up
 	while(!is_root(idx) && get_value(idx) < get_value(get_parent(idx))){
-		if(swap_node(idx, get_parent(idx)) != SUCCESS) PRINT_AND_RETURN("swap node failed in update in prim\n", GENERAL_ERROR);
+		if(swap_node(idx, get_parent(idx), heap) != SUCCESS) PRINT_AND_RETURN("swap node failed in update in prim\n", GENERAL_ERROR);
 		idx = get_parent(idx);
 	}
 

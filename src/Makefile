@@ -1,32 +1,34 @@
 
-decide: main.o msa.o tree.o options.o tools.o stat.o
-	gcc -Wall main.o msa.o tree.o options.o tools.o stat.o -o decide
+ml: inc_ml.o c_inc.o dist.o prim.o options.o tools.o tree.o traversal.o 
+	gcc -Wall c_inc.o dist.o prim.o options.o tools.o tree.o traversal.o -o constraint_inc
+	gcc -Wall inc_ml.o options.o tools.o -o ml
 
-main.o: main.c msa.h tree.h options.h tools.h utilities.h
-	gcc -Wall -c main.c msa.h tree.h options.h tools.h utilities.h
+c_inc.o: c_inc.c tree.h utilities.h options.h tools.h dist.h prim.h c_inc.h
+	gcc -Wall -c c_inc.c tree.h options.h tools.h dist.h prim.h traversal.h c_inc.h utilities.h 
 
-msa.o:  msa.c msa.h
-	gcc -Wall -c msa.c msa.h tree.h utilities.h
+inc_ml.o: inc_ml.c options.h tools.h utilities.h
+	gcc -Wall -c inc_ml.c options.h tools.h utilities.h 
 
-options.o: options.c options.h
-	gcc -Wall -c options.c options.h utilities.h
+dist.o: dist.c dist.h utilities.h options.h tools.h c_inc.h 
+	gcc -Wall -c dist.c dist.h options.h tools.h c_inc.h utilities.h
 
-tools.o: tools.c tools.h
-	gcc -Wall -c tools.c tools.h
+prim.o:  prim.c prim.h options.h utilities.h c_inc.h
+	gcc -Wall -c prim.c prim.h options.h utilities.h c_inc.h
 
-tree.o: tree.c tree.h
-	gcc -Wall -c tree.c tree.h
+options.o: options.c options.h c_inc.h
+	gcc -Wall -c options.c options.h utilities.h c_inc.h
 
-stat.o: stat.c stat.h msa.h utilities.h
-	gcc -Wall -c stat.c stat.h msa.h utilities.h
+tools.o: tools.c tools.h utilities.h options.h c_inc.h
+	gcc -Wall -c tools.c tools.h options.h utilities.h  c_inc.h
+
+tree.o: tree.c tree.h utilities.h options.h c_inc.h
+	gcc -Wall -c tree.c utilities.h options.h tree.h c_inc.h
+
+traversal.o: traversal.c traversal.h utilities.h options.h c_inc.h
+	gcc -Wall -c traversal.c traversal.h utilities.h options.h c_inc.h
 
 clean:
 	rm *.o 
 	rm *.gch
-	rm decide
-
-
-new:
-	rm double_*
-	rm single_*
-	rm fasttree.out
+	rm constraint_inc
+	rm ml
