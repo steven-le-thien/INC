@@ -26,8 +26,14 @@ The command for INC-ML is
 ```
 ml -i <input_alignment> -o <output_prefix> -t <initial_tree>
 ```
-The `-t' flag to INC-ML is optional. 
+The `-t` flag to INC-ML is optional. 
 
 If you want to call `constraint_inc` or `ml` from any directory, make sure they are on your PATH variable (if you are using UNIX-based machine) or equivalent. 
 
-When running ml, also make sure that all the dependencies (PASTA, FastTree2, Newick Utils, extra scripts) are also on your PATH variable. 
+When running `ml`, also make sure that all the dependencies (PASTA, FastTree2, Newick Utils, extra scripts) are also on your PATH variable. 
+
+## Format
+1. The input distance matrix in `constraint_inc` is in PHYLIP format. 
+2. All trees (input / output) are in Newick.
+3. The input alignment for `ml` is in PASTA.
+
