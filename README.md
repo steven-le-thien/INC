@@ -15,7 +15,7 @@ If you want to use the maximum likelihood extension of constraint INC then the f
 1. PASTA (working to remove this dependency) (https://github.com/smirarab/pasta) 
 2. FastTree2 (http://www.microbesonline.org/fasttree/FastTree.c)
 3. Newick Utils (https://github.com/tjunier/newick_utils)
-4. Extra scripts in the tools folder (currently not published for liscensing reasons)
+4. Extra scripts in the tools folder
 
 ## Installation
 Run `make` to generate the binaries `constraint_inc` and `ml`, used for the constraint INC and its ML extension respectively. The command for constraint INC is 
@@ -37,3 +37,5 @@ When running `ml`, also make sure that all the dependencies (PASTA, FastTree2, N
 2. All trees (input / output) are in Newick.
 3. The input alignment for `ml` is in PASTA.
 
+## License and Copyright
+See the attached LICENSE and COPYRIGHT file for details. Note that some part of the program (build_subsets_from_tree.py) was distributed under a different License
