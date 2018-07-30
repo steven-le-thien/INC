@@ -7,8 +7,8 @@ Sy, Tandy Warnow, and members of the Warnow group
 at the time. The main algorithm was discovered by 
 Richard Zhang, Satish Rao and Tandy Warnow. 
 
-constraint_inc uses the some scripts (in the tools 
-folder) from NJmerge written by Erin K. Molloy, 
+constraint_inc uses the some scripts (build_subsets_from_tree.py
+in the tools folder) from NJmerge written by Erin K. Molloy, 
 which has its own license and copyright information. 
 See NJmerge github repository for more information.
 
