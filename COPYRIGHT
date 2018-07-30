@@ -1,0 +1,30 @@
+constraint_inc
+-----------------------------
+
+The initial code was written by Thien Le in July
+2018, with inputs and contributions from Aaron
+Sy, Tandy Warnow, and members of the Warnow group
+at the time. The main algorithm was discovered by 
+Richard Zhang, Satish Rao and Tandy Warnow. 
+
+constraint_inc uses the some scripts (in the tools 
+folder) from NJmerge written by Erin K. Molloy, 
+which has its own license and copyright information. 
+See NJmerge github repository for more information.
+
+The rest of the program is distributed under the 
+terms of the GNU General Public License. See the 
+file LICENSE for details.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or (at
+your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+A copy of the GNU General Public License is in the file LICENSE.  You
+may also obtain a copy from <http://www.gnu.org/licenses/>.
