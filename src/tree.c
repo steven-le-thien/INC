@@ -1,4 +1,4 @@
-// File in HMMDecompositionDecision, created by Thien Le in July 2018
+// File in inc_ml, created by Thien Le in July 2018
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +24,7 @@ int swap_adajcency(int nod_a, int node_b, int node_c, BT* tree);
 int make_adjacent(int node_a, int node_b, BT * tree);
 int make_parent(int node_p, int node_c, BT * tree);
 int save_name(int cur_node, char * name, MAP_GRP * map, int tree_idx);
+void petite_dfs(int node, int parent, char ** name_map, char * builder, BT * tree);
 
 /* Read all constraint trees at once into memory
  * Input:       meta        meta variables, including the pointers to constraint trees in memory
@@ -56,14 +57,13 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
         map->master_to_gidx[i]      = -1;        
     }
 
+    // Call the newick reader
+    for(i = 0; i < meta->n_ctree; i++){
+        meta->ctree[i]      = read_newick(map, options->tree_names[i], i);
+    }
+
                                                                                             #if DEBUG 
                                                                                                 printf("debug: number of taxa is %d, number of constraint trees is %d\n", meta->n_taxa, meta->n_ctree); 
-                                                                                            #endif
-
-    // Call the newick reader
-    for(i = 0; i < meta->n_ctree; i++) 
-        meta->ctree[i]      = read_newick(map, options->tree_names[i], i);
-                                                                                            #if DEBUG 
                                                                                                 printf("debug: high level read newick tree debug, the following print out number of nodes of each constraint trees and their sum\n");
                                                                                                 int sum = 0;
                                                                                                 for(i = 0; i < meta->n_ctree; i++){
@@ -146,6 +146,7 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
                                                                                                 }
                                                                                                 printf("\n");
                                                                                             #endif
+    
                                                                                                     
     return 0;
 }
@@ -157,8 +158,13 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
  * Output: 0 on success, ERROR otherwise
  * Effect: allocate some memories, build some trees, init the growing tree and visited array in meta
  */
-int init_growing_tree(INC_GRP * meta, MST_GRP * mst){ 
+int init_growing_tree(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){ 
     int i;
+
+    // Update master->idx mapping
+    map->master_to_gidx[mst->prim_ord[0]] = 0;
+    map->master_to_gidx[mst->prim_ord[1]] = 1;
+    map->master_to_gidx[mst->prim_ord[2]] = 2;
 
     // Check that there must be at least 3 leaves
     if(meta->n_taxa < 3)                            PRINT_AND_RETURN("there are less than 3 taxa, the tree is trivial\n", GENERAL_ERROR);
@@ -183,14 +189,13 @@ int init_growing_tree(INC_GRP * meta, MST_GRP * mst){
     for(i = 0; i < 3; i++){
         meta->gtree->master_idx_map[i] = mst->prim_ord[i];
         meta->visited[mst->prim_ord[i]] = -1;
-
         meta->gtree->adj_list[3][i].sample = i;
     }
 
     // This is a bit tricky, we need to find adjacent nodes in the mst
     meta->gtree->adj_list[0][0].sample = 1; // fist vertex in prim is obviously connected to second
     meta->gtree->adj_list[1][0].sample = 0; // vice versa
-    meta->gtree->adj_list[2][0].sample = mst->prim_par[2] == mst->prim_ord[0] ? 0 : 1; // check if the parent of 3rd vertex in mst is adjacent to 0 or 1
+    meta->gtree->adj_list[2][0].sample = mst->prim_par[2]; // check if the parent of 3rd vertex in mst is adjacent to 0 or 1
                                                                                             #if DEBUG 
                                                                                                 printf("debug: testing modules for initializing the tree\n"); 
 
@@ -210,33 +215,23 @@ int init_growing_tree(INC_GRP * meta, MST_GRP * mst){
 }
 
 int attach_leaf_to_edge(INC_GRP * meta,  MAP_GRP * map,MST_GRP * mst, VOTE_GRP * vote, int i){
+    // Set the new edge to be present in the growing tree
     meta->visited[mst->prim_ord[i]] = -1;
 
-    return attach_leaf_to_edge_impl(meta->gtree,
+    // Actual attachment
+    if(attach_leaf_to_edge_impl(meta->gtree,
                                     mst->prim_ord[i], 
                                     vote->ins.p,
                                     vote->ins.c,
-                                    map->master_to_gidx[mst->prim_par[i]]);
+                                    map->master_to_gidx[mst->prim_par[i]])
+                                        != SUCCESS)                 PRINT_AND_RETURN("attach leaf to edge failed in wrapper\n", GENERAL_ERROR);
+
+    // Set the correct mapping of the index of the new edge (the internal tree mapping is set in the function above)
+    map->master_to_gidx[mst->prim_ord[i]] = meta->gtree->n_node - 1;
+    return 0;
 
 }
 
-void petite_dfs(int node, int parent, char ** name_map, char * builder, BT * tree){
-    int i;
-    if(tree->degree[node] == 1) {
-        strcat(builder, name_map[tree->master_idx_map[node]]);
-        return;
-    }
-
-    strcat(builder, "(");
-    for(i = 0; i < tree->degree[node]; i++){
-        if(tree->adj_list[node][i].dest == parent) continue;
-
-        petite_dfs(tree->adj_list[node][i].dest, node, name_map, builder, tree);
-        if(i != tree->degree[node] - 1) strcat(builder, ",");
-    }
-
-    strcat(builder, ")");
-}
 
 int write_newick(BT * tree, char * filename, char ** name_map){
     char buffer[MAX_BUFFER_SIZE];
@@ -301,8 +296,6 @@ BT * tree_constructor(int n, BT_edge ** adj_list, int * degree, int * master_idx
     for(i = 0; i < n; i++){
         tree->adj_list[i] = malloc(3 * sizeof(BT_edge));
     }
-    // printf("0 is %d %d %d 3 is %d %d %d\n", adj_list[0][0].dest, adj_list[0][1].dest, adj_list[0][2].dest, adj_list[3][0].dest, adj_list[3][1].dest, adj_list[3][2].dest);
-
     // Initialization 
     for(i = 0; i < n; i++){
         if(adj_list && adj_list[i]) memcpy(tree->adj_list[i], adj_list[i], 3 * sizeof(BT_edge));
@@ -383,6 +376,7 @@ BT * read_newick(MAP_GRP * map, char * filename, int tree_idx){
             case ')': // end of level
                 if(save_name(cur_node, cur_name, map, tree_idx) != SUCCESS) PRINT_AND_RETURN("save name failed in read_newick\n", NULL);
                 decr_level(parent_node, cur_node); 
+                cur_state = OTHER_STATE;
                 break;
             case ':': 
                 cur_state = OTHER_STATE;
@@ -523,6 +517,24 @@ int save_name(int cur_node, char * name, MAP_GRP * map, int tree_idx){
     strclr(name);
 
     return 0;
+}
+
+void petite_dfs(int node, int parent, char ** name_map, char * builder, BT * tree){
+    int i;
+    if(tree->degree[node] == 1) {
+        strcat(builder, name_map[tree->master_idx_map[node]]);
+        return;
+    }
+
+    strcat(builder, "(");
+    for(i = 0; i < tree->degree[node]; i++){
+        if(tree->adj_list[node][i].dest == parent) continue;
+
+        petite_dfs(tree->adj_list[node][i].dest, node, name_map, builder, tree);
+        if(i != tree->degree[node] - 1) strcat(builder, ",");
+    }
+
+    strcat(builder, ")");
 }
 
 

@@ -1,7 +1,7 @@
 
-ml: inc_ml.o c_inc.o dist.o prim.o options.o tools.o tree.o traversal.o 
+ml: inc_ml.o c_inc.o dist.o prim.o options.o tools.o tree.o traversal.o msa.o
 	gcc -Wall c_inc.o dist.o prim.o options.o tools.o tree.o traversal.o -o constraint_inc
-	gcc -Wall inc_ml.o options.o tools.o -o ml
+	gcc -Wall inc_ml.o options.o tools.o msa.o -o ml
 
 c_inc.o: c_inc.c tree.h utilities.h options.h tools.h dist.h prim.h c_inc.h
 	gcc -Wall -c c_inc.c tree.h options.h tools.h dist.h prim.h traversal.h c_inc.h utilities.h 
@@ -26,6 +26,9 @@ tree.o: tree.c tree.h utilities.h options.h c_inc.h
 
 traversal.o: traversal.c traversal.h utilities.h options.h c_inc.h
 	gcc -Wall -c traversal.c traversal.h utilities.h options.h c_inc.h
+
+msa.o: msa.c msa.h utilities.h
+	gcc -Wall -c msa.c msa.h utilities.h
 
 clean:
 	rm *.o 

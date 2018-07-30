@@ -1,3 +1,5 @@
+// File in inc_ml, created by Thien Le in July 2018
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -27,8 +29,8 @@ int fastphylo_job(fp_options * fp_options){
     return 0;
 }
 
-int constraint_inc(int argc){
-    int i; 
+int constraint_inc(int argc, option_t * options){
+    int i;
     char command[CMD_BUFFER_SIZE];
     char name[CMD_BUFFER_SIZE];
     char num[1000];
@@ -37,18 +39,21 @@ int constraint_inc(int argc){
     strcat(command, "constraint_inc");
     add_command(command, "-i");
     add_command(command, "c_inc_input");
+    add_command(command, "-o");
+    add_command(command, options->output_name);
     add_command(command, "-t");
     for(i = 0; i < argc; i++){
         strclr(name);
         strclr(num);
         sprintf(num, "%d", i);
-
-        strcat(name, "small_ctree");
+        strcat(name, options->
+            output_name);
+        strcat(name, "_ctree");
         strcat(name, num);
         strcat(name, ".tree");
         add_command(command, name);
     }
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling fastphylo job\n", GENERAL_ERROR);
+    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling constraint_inc\n", GENERAL_ERROR);
 
     return 0;
 }
@@ -61,9 +66,9 @@ int fasttree_job(option_t * options){
     add_command(command, "<");
     add_command(command, options->input_name);
     add_command(command, ">");
-    add_command(command, "first_tree.tree");
+    add_command(command, options->tree_names[0]);
 
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling fastphylo job\n", GENERAL_ERROR);
+    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling fasttree_job\n", GENERAL_ERROR);
 
     return 0;
 }
@@ -80,10 +85,57 @@ int upp_job(option_t * options){
     add_command(command, "first_tree.tree");
     add_command(command, "-s");
     add_command(command, options->input_name);
+    add_command(command, "-A");
+    add_command(command, "500");
     add_command(command, "-S");
     add_command(command, "centroid");
     
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling fastphylo job\n", GENERAL_ERROR);
+    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling upp_job\n", GENERAL_ERROR);
+
+    return 0;
+}
+
+int subset_job(option_t * options){
+    char command[CMD_BUFFER_SIZE];
+
+    strclr(command);
+    strcat(command, "build_subsets_from_tree.py -t first_tree.tree");
+    add_command(command, "-o");
+    add_command(command, options->output_name);
+    add_command(command, "-n");
+    add_command(command, "200");
+
+
+    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in subset_jon \n", GENERAL_ERROR);
+    return 0;
+}
+
+int nw_utils_job(option_t * options){
+    char command[CMD_BUFFER_SIZE];
+
+    strclr(command);
+    strcat(command, "nw_prune");
+    add_command(command, options->tree_names[0]);
+    add_command(command, "$(cat ");
+    strcat(command, options->input_name);
+    strcat(command, ")");
+    add_command(command, ">");
+    add_command(command, options->output_name);
+    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling nw_utils\n", GENERAL_ERROR);
+
+    return 0;
+}
+
+int rm_label_job(option_t * options){
+    char command[CMD_BUFFER_SIZE];
+
+    strclr(command);
+    strcat(command, "remove_internal_labels.py");
+    add_command(command, "-t");
+    add_command(command, options->input_name);
+    add_command(command, "-o");
+    add_command(command, options->output_name);
+    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling rm_label_job\n", GENERAL_ERROR);
 
     return 0;
 }

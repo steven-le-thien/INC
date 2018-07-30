@@ -1,4 +1,4 @@
-// File in HMMDecompositionDecision, created by Thien Le in July 2018
+// File in inc_ml, created by Thien Le in July 2018
 
 #ifndef OPTION_H
 #define OPTION_H

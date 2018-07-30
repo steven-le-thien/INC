@@ -1,4 +1,4 @@
-// File in HMMDecompositionDecision, created by Thien Le in July 2018
+// File in inc_ml, created by Thien Le in July 2018
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,21 +28,25 @@ int find_arg_index(char * flag, char * content, option_t * options, int * i, int
     int j;
     if(strcmp(flag, "-i") == 0){//reading input name
         options->input_index = (*i);
-        options->input_name = malloc(strlen(content));  
+        options->input_name = malloc(strlen(content) + 1);  
 
         if(!options->input_name)        
             PRINT_AND_RETURN("malloc failure for input name in find_arg_index",     MALLOC_ERROR);
-        else
+        else{
             strcpy(options->input_name, content);
+            options->input_name[strlen(content)] = 0;
+        }
 
     } else if(strcmp(flag, "-o") == 0){
         options->output_index = (*i);
-        options->output_name = malloc(strlen(content));
+        options->output_name = malloc(strlen(content) + 1);
 
         if(!options->output_name)       
             PRINT_AND_RETURN("malloc failure for output name in find_arg_index",    MALLOC_ERROR);
-        else
+        else{
             strcpy(options->output_name, content);
+            options->output_name[strlen(content)] = 0;
+        }
 
     } else if(strcmp(flag, "-t") == 0){
         options->tree_index = (*i);
@@ -55,8 +59,9 @@ int find_arg_index(char * flag, char * content, option_t * options, int * i, int
 
         options->tree_names = malloc(options->num_trees * sizeof(char*));
         for(j = 0; j < options->num_trees; j++){
-            options->tree_names[j] = malloc(strlen(argv[(*i) + j + 1]));
+            options->tree_names[j] = malloc(strlen(argv[(*i) + j + 1]) + 1);
             strcpy(options->tree_names[j], argv[(*i) + j + 1]);
+            options->tree_names[j][strlen(argv[(*i) + j + 1])] = 0;
         }
         (*i) += options->num_trees ;
 
