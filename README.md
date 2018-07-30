@@ -38,4 +38,4 @@ When running `ml`, also make sure that all the dependencies (PASTA, FastTree2, N
 3. The input alignment for `ml` is in PASTA.
 
 ## License and Copyright
-See the attached LICENSE and COPYRIGHT file for details. Note that some part of the program (build_subsets_from_tree.py) was distributed under a different License
+See the attached LICENSE and COPYRIGHT file for details. Note that some part of the program (build_subsets_from_tree.py) was distributed under a different license
