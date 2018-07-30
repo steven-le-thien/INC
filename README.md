@@ -18,12 +18,16 @@ If you want to use the maximum likelihood extension of constraint INC then the f
 4. Extra scripts in the tools folder (currently not published for liscensing reasons)
 
 ## Installation
-Run `make' to generate the binaries `constraint_inc' and `ml', used for the constraint INC and its ML extension respectively. The command for constraint INC is 
+Run `make` to generate the binaries `constraint_inc` and `ml`, used for the constraint INC and its ML extension respectively. The command for constraint INC is 
 ```
 constraint_inc -i <input_distance_matrix> -o <output_prefix> -t <constraint_tree1> <constraint_tree2> ... 
-'''
+```
 The command for INC-ML is 
 ```
 ml -i <input_alignment> -o <output_prefix> -t <initial_tree>
-'''
-The `-t' flag to INC-ML is optional
+```
+The `-t' flag to INC-ML is optional. 
+
+If you want to call `constraint_inc` or `ml` from any directory, make sure they are on your PATH variable (if you are using UNIX-based machine) or equivalent. 
+
+When running ml, also make sure that all the dependencies (PASTA, FastTree2, Newick Utils, extra scripts) are also on your PATH variable. 
