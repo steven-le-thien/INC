@@ -18,7 +18,7 @@ int subset_msa(char * infile, char * outfile, msa_t * msa){
     FILE * p;
     char taxon_name[MAX_NAME_SIZE];
     int i;
-
+printf("%s %s\n", infile, outfile);
     f = fopen(infile, "r");
     p = fopen(outfile, "w"); 
     if(!f) PRINT_AND_RETURN("file does not exsts in subset msa", OPEN_ERROR);

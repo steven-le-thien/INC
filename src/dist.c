@@ -37,7 +37,7 @@ int parse_distance_matrix(INC_GRP * meta, MAP_GRP * map, option_t * options){
     if(fscanf(f, "%s", buf) < 0)    PRINT_AND_RETURN("empty input file", GENERAL_ERROR); 
     fclose(f);
 
-    if(IS_FASTA(buf)){ // Route through a PHYLIP creater (for now)
+    if(IS_FASTA(buf)){ // Route through a PHYLIP creater (for now) THIS FEATURE IS NOT TESTED
         default_fp_options.input_name = options->input_name;
         fastphylo_job(&default_fp_options);
 

@@ -7,7 +7,8 @@
 #include "tools.h"
 #include "utilities.h"
 
-int subset_threshold = 100;
+int use_true_tree_for_constraint_trees = 1;
+int subset_threshold = 200;
 
 // Private functions
 void add_command(char * current_command, char * new_command);
@@ -54,7 +55,10 @@ int upp_job(option_t * options){
 
 int subset_job(option_t * options){
     char command[CMD_BUFFER_SIZE];
-    sprintf(command, "build_subsets_from_tree.py -t %sfirst_tree.tree -o %s -n %d", options->output_name, options->output_name, subset_threshold);
+    if(use_true_tree_for_constraint_trees)
+        sprintf(command, "build_subsets_from_tree.py -t %s -o %s -n %d", options->tree_names[1], options->output_name, subset_threshold);
+    else 
+        sprintf(command, "build_subsets_from_tree.py -t %sfirst_tree.tree -o %s -n %d", options->output_name, options->output_name, subset_threshold);
 
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in subset_jon \n", GENERAL_ERROR);
     return 0;
@@ -62,7 +66,8 @@ int subset_job(option_t * options){
 
 int nw_utils_job(option_t * options){
     char command[CMD_BUFFER_SIZE];
-    sprintf(command, "nw_prune %s $(cat %s) > %s", options->tree_names[0], options->input_name, options->output_name);
+    sprintf(command, "nw_prune -v %s $(cat %s) > %s", options->tree_names[0], options->input_name, options->output_name);
+        printf("%s\n", command);
 
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling nw_utils\n", GENERAL_ERROR);
     return 0;
@@ -74,6 +79,14 @@ int rm_label_job(option_t * options){
 
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling rm_label_job\n", GENERAL_ERROR);
     return 0;
+}
+
+int raxml_job(option_t * options){
+    char command[CMD_BUFFER_SIZE];
+    sprintf(command, "raxmlHPC-AVX -T 12 -m GTRGAMMA -j -n %s -s %s -w %s -p 1", options->output_name, options->input_name, options->tree_names[0]);
+
+    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling raxml job\n", GENERAL_ERROR);
+    return 0; 
 }
 
 /* Helper function to add a command into a string of commands
