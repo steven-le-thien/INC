@@ -78,7 +78,9 @@ int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
         // Determine the starting and ending of the valid subtree in the growing tree
         if(find_valid_subtree(meta, map, mst, &vote)
                                                 != SUCCESS)             PRINT_AND_EXIT("find_valid_subtree failed in main loop\n", GENERAL_ERROR);   
-
+                                                                                            #if DEBUG 
+                                                                                                 printf("the vald subtree is %d %d %d %d\n", vote.st_lca.p, vote.st_lca.c, vote.nd_lca.p, vote.nd_lca.c); 
+                                                                                            #endif
         // Vote!
         if(bfs_vote(meta, map, mst, &vote, i)  
                                                 != SUCCESS)             PRINT_AND_EXIT("bfs_vote failed in main loop\n", GENERAL_ERROR);

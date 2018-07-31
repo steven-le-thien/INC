@@ -195,7 +195,7 @@ int init_growing_tree(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
     // This is a bit tricky, we need to find adjacent nodes in the mst
     meta->gtree->adj_list[0][0].sample = 1; // fist vertex in prim is obviously connected to second
     meta->gtree->adj_list[1][0].sample = 0; // vice versa
-    meta->gtree->adj_list[2][0].sample = mst->prim_par[2]; // check if the parent of 3rd vertex in mst is adjacent to 0 or 1
+    meta->gtree->adj_list[2][0].sample = mst->prim_par[mst->prim_ord[2]]; // check if the parent of 3rd vertex in mst is adjacent to 0 or 1
                                                                                             #if DEBUG 
                                                                                                 printf("debug: testing modules for initializing the tree\n"); 
 
@@ -217,13 +217,18 @@ int init_growing_tree(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
 int attach_leaf_to_edge(INC_GRP * meta,  MAP_GRP * map,MST_GRP * mst, VOTE_GRP * vote, int i){
     // Set the new edge to be present in the growing tree
     meta->visited[mst->prim_ord[i]] = -1;
-
+                                                                                            #if DEBUG 
+                                                                                                 // printf("debug: the following print out prim's tree (parenting)\n");
+                                                                                                 // for(i = 0; i < meta->n_taxa; i++)
+                                                                                                 //     printf("%d ", mst->prim_par[i]);
+                                                                                                printf("debug: parent in mater is %d, in growing is %d\n", mst->prim_par[mst->prim_ord[i]], map->master_to_gidx[mst->prim_par[mst->prim_ord[i]]]);
+                                                                                            #endif
     // Actual attachment
     if(attach_leaf_to_edge_impl(meta->gtree,
                                     mst->prim_ord[i], 
                                     vote->ins.p,
                                     vote->ins.c,
-                                    map->master_to_gidx[mst->prim_par[i]])
+                                    map->master_to_gidx[mst->prim_par[mst->prim_ord[i]]])
                                         != SUCCESS)                 PRINT_AND_RETURN("attach leaf to edge failed in wrapper\n", GENERAL_ERROR);
 
     // Set the correct mapping of the index of the new edge (the internal tree mapping is set in the function above)
@@ -272,7 +277,7 @@ int attach_leaf_to_edge_impl(BT * growing_tree, int x, int additional_edge_paren
         
     growing_tree->adj_list[growing_tree->n_node - 1][0].sample = adjacent_in_mst;
                                                                                             #if DEBUG 
-                                                                                                 printf("adjacent_in_mst is %d\n", adjacent_in_mst); 
+                                                                                                 printf("debug: adjacent_in_mst is %d\n", adjacent_in_mst); 
                                                                                             #endif
     growing_tree->master_idx_map[growing_tree->n_node - 1] = x;
 

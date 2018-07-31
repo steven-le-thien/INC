@@ -7,25 +7,17 @@
 #include "tools.h"
 #include "utilities.h"
 
+int subset_threshold = 100;
+
 // Private functions
 void add_command(char * current_command, char * new_command);
 
 // Function to create command for hmmsearch. 
 int fastphylo_job(fp_options * fp_options){
     char command[CMD_BUFFER_SIZE];
-
-    strclr(command);
-    strcat(command, "fastdist");
-    add_command(command, fp_options->output_format);
-    add_command(command, fp_options->output_name);
-    add_command(command, fp_options->input_format);
-    add_command(command, "-i");
-    add_command(command, fp_options->input_name);
-    add_command(command, ">");
-    add_command(command, fp_options->stdout);
+    sprintf(command, "fastdist %s %s %s -i %s > %s", fp_options->output_format, fp_options->output_name, fp_options->input_format, fp_options->input_name, fp_options->stdout);
 
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling fastphylo job\n", GENERAL_ERROR);
-
     return 0;
 }
 
@@ -33,24 +25,10 @@ int constraint_inc(int argc, option_t * options){
     int i;
     char command[CMD_BUFFER_SIZE];
     char name[CMD_BUFFER_SIZE];
-    char num[1000];
+    sprintf(command, "constraint_inc -i %sc_inc_input -o %s -t", options->output_name, options->output_name);
 
-    strclr(command);
-    strcat(command, "constraint_inc");
-    add_command(command, "-i");
-    add_command(command, "c_inc_input");
-    add_command(command, "-o");
-    add_command(command, options->output_name);
-    add_command(command, "-t");
     for(i = 0; i < argc; i++){
-        strclr(name);
-        strclr(num);
-        sprintf(num, "%d", i);
-        strcat(name, options->
-            output_name);
-        strcat(name, "_ctree");
-        strcat(name, num);
-        strcat(name, ".tree");
+        sprintf(name, "%s_ctree%d.tree", options->output_name, i);
         add_command(command, name);
     }
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling constraint_inc\n", GENERAL_ERROR);
@@ -60,51 +38,23 @@ int constraint_inc(int argc, option_t * options){
 
 int fasttree_job(option_t * options){
     char command[CMD_BUFFER_SIZE];
-
-    strclr(command);
-    strcat(command, "FastTree -nt -gtr");
-    add_command(command, "<");
-    add_command(command, options->input_name);
-    add_command(command, ">");
-    add_command(command, options->tree_names[0]);
+    sprintf(command, "FastTree -nt -gtr -quiet < %s > %s%s", options->input_name, options->output_name, options->tree_names[0]);
 
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling fasttree_job\n", GENERAL_ERROR);
-
     return 0;
 }
 
 int upp_job(option_t * options){
     char command[CMD_BUFFER_SIZE];
-
-    strclr(command);
-    // printf("%s\n", options->input_name);
-    strcat(command, "run_upp.py");
-    add_command(command, "-a");
-    add_command(command, options->input_name);
-    add_command(command, "-t");
-    add_command(command, "first_tree.tree");
-    add_command(command, "-s");
-    add_command(command, options->input_name);
-    add_command(command, "-A");
-    add_command(command, "500");
-    add_command(command, "-S");
-    add_command(command, "centroid");
+    sprintf("run_upp.py -a %s -t %sfirst_tree.tree -s %s -A %d -S centroid", options->input_name, options->output_name, options->input_name, subset_threshold);
     
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling upp_job\n", GENERAL_ERROR);
-
     return 0;
 }
 
 int subset_job(option_t * options){
     char command[CMD_BUFFER_SIZE];
-
-    strclr(command);
-    strcat(command, "build_subsets_from_tree.py -t first_tree.tree");
-    add_command(command, "-o");
-    add_command(command, options->output_name);
-    add_command(command, "-n");
-    add_command(command, "200");
-
+    sprintf(command, "build_subsets_from_tree.py -t %sfirst_tree.tree -o %s -n %d", options->output_name, options->output_name, subset_threshold);
 
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in subset_jon \n", GENERAL_ERROR);
     return 0;
@@ -112,31 +62,17 @@ int subset_job(option_t * options){
 
 int nw_utils_job(option_t * options){
     char command[CMD_BUFFER_SIZE];
+    sprintf(command, "nw_prune %s $(cat %s) > %s", options->tree_names[0], options->input_name, options->output_name);
 
-    strclr(command);
-    strcat(command, "nw_prune");
-    add_command(command, options->tree_names[0]);
-    add_command(command, "$(cat ");
-    strcat(command, options->input_name);
-    strcat(command, ")");
-    add_command(command, ">");
-    add_command(command, options->output_name);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling nw_utils\n", GENERAL_ERROR);
-
     return 0;
 }
 
 int rm_label_job(option_t * options){
     char command[CMD_BUFFER_SIZE];
+    sprintf(command, "remove_internal_labels.py -t %s -o %s", options->input_name, options->output_name);
 
-    strclr(command);
-    strcat(command, "remove_internal_labels.py");
-    add_command(command, "-t");
-    add_command(command, options->input_name);
-    add_command(command, "-o");
-    add_command(command, options->output_name);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling rm_label_job\n", GENERAL_ERROR);
-
     return 0;
 }
 

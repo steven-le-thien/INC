@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
+
 #include "utilities.h"
 #include "msa.h"
 
@@ -176,9 +178,21 @@ int compute_k2p_distance(msa_t * msa, float *** d){
     return 0;
 }
 
-int write_distance_matrix(float ** d, char * filename, msa_t * msa){
+int write_distance_matrix(float ** d, option_t * options, msa_t * msa){
     FILE * f;
     int i, j;
+    char filename[MAX_BUFFER_SIZE];
+
+    strclr(filename);
+    strcat(filename, options->output_name);
+    strcat(filename, "c_inc_input");
+
+    f = fopen(filename, "r");
+    if(f){ // such file already exists, then we just skip and assume that we have the correct distance matrix
+        return 0;
+    }
+
+    fclose(f);
 
     f = fopen(filename, "w");
     fprintf(f, "%d\n", msa->num_seq);

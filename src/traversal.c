@@ -43,7 +43,7 @@ int init_vote(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int
     // Identify the constraint tree
     vote->ctree_idx = map->master_to_ctree[mst->prim_ord[i]];
                                                                                         #if DEBUG 
-                                                                                            printf("debug: node of interest is %d constraint tree is %d, name is %s\n", mst->prim_ord[i], vote.ctree_idx, map->master_to_name[mst->prim_ord[i]]); 
+                                                                                            printf("debug: node of interest is %d constraint tree is %d, name is %s\n", mst->prim_ord[i], vote->ctree_idx, map->master_to_name[mst->prim_ord[i]]); 
                                                                                         #endif
 
                                                                                         #if DEBUG 
@@ -136,7 +136,7 @@ int find_bipartition(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vo
                                 &(vote->c_lca.c), 
                                 0) != SUCCESS)              PRINT_AND_RETURN("dfs_lca_implementation failed in wrapper\n", GENERAL_ERROR);
                                                                                             #if DEBUG 
-                                                                                                printf("debug: output of dfs_loca is %d %d (%d %d) in master index \n", vote->c_lca.p, vote->c_lca.c, meta->ctree[vote->ctree_idx]->master_idx_map[vote->c_lca.p], meta->ctree[vote->ctree_idx]->master_idx_map[vote->c_lca.c]); 
+                                                                                                printf("debug: output of dfs_loca is %d %d (%d %d) in master index with dp%d\n", vote->c_lca.p, vote->c_lca.c, meta->ctree[vote->ctree_idx]->master_idx_map[vote->c_lca.p], meta->ctree[vote->ctree_idx]->master_idx_map[vote->c_lca.c], placeholder); 
                                                                                             #endif
     // If there are less than 3 shared common taxa then don't bother
     if(placeholder < 3) return 0;
@@ -248,7 +248,7 @@ int bfs_vote(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int 
         vote->ins.c = vote->st_lca.c;
         vote->ins.p = vote->st_lca.p;
                                                                                             #if DEBUG 
-                                                                                                printf("debug: the edge i'm attaching to is (%d %d) with i %d\n", vote.ins.c, vote.ins.p, i);
+                                                                                                printf("debug: the edge i'm attaching to is (%d %d) with i %d\n", vote->ins.c, vote->ins.p, i);
                                                                                             #endif
         return 0;
     }
@@ -266,7 +266,7 @@ int bfs_vote(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int 
                             mst->max_w)                 // q0
                                 != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
                                                                                             #if DEBUG 
-                                                                                                printf("debug: the edge i'm attaching to is (%d %d) with i %d\n", vote.ins.c, vote.ins.p, i);
+                                                                                                printf("debug: the edge i'm attaching to is (%d %d) with i %d\n", vote->ins.c, vote->ins.p, i);
                                                                                             #endif
     return 0;
 }
@@ -464,9 +464,10 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
 
 
                                                                                                             #if DEBUG && DEBUG_BFS 
-                                                                                                                printf("debug: in bfs, indexing is %d %d %d for %d %d %d\n", up, u1, u2, tree->adj_list[cur_vertex][child_idx_a[0]].master_idx, tree->adj_list[cur_vertex][child_idx_a[1]].master_idx,tree->adj_list[cur_vertex][parent_idx].master_idx); 
-                                                                                                                printf("debug: in bfs, mapped is %d %d %d\n", mapping[up], mapping[u1], mapping[u2]);
-                                                                                                                printf("test all mem %f %f %f %f %f %f\n", d[mapping[up]][mapping[u1]], d[mapping[up]][mapping[u2]], d[mapping[up]][x], d[mapping[u1]][mapping[u2]], d[mapping[u1]][x],d[mapping[u2]][x]);
+                                                                                                                printf("debug: current-node is %d\n", cur_vertex);
+                                                                                                                printf("debug: in bfs, indexing is %d %d %d for %d %d %d\n", up, u[0], u[1], tree->adj_list[cur_vertex][child_idx_a[0]].master_idx, tree->adj_list[cur_vertex][child_idx_a[1]].master_idx,tree->adj_list[cur_vertex][parent_idx].master_idx); 
+                                                                                                                printf("debug: in bfs, mapped is %d %d %d\n", mapping[up], mapping[u[0]], mapping[u[1]]);
+                                                                                                                printf("test all mem %f %f %f %f %f %f\n", d[mapping[up]][mapping[u[0]]], d[mapping[up]][mapping[u[1]]], d[mapping[up]][x], d[mapping[u[0]]][mapping[u[1]]], d[mapping[u[0]]][x],d[mapping[u[1]]][x]);
                                                                                                             #endif
         upp[0] = d[mapping[up]][mapping[u[0]]] + d[mapping[u[1]]][x];
         upp[1] = d[mapping[up]][mapping[u[1]]] + d[mapping[u[0]]][x];

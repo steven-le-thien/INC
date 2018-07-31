@@ -3,7 +3,7 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
-#define DEBUG       0   
+#define DEBUG       0
 
 #define MAXN                                    4000000 // these are number of nodes, not just number of leaves
 #define MAX_NAME_SIZE                           10
