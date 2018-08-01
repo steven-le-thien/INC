@@ -7,7 +7,7 @@
 #include "tools.h"
 #include "utilities.h"
 
-int use_true_tree_for_constraint_trees = 1;
+int use_true_tree_for_constraint_trees = 0;
 int subset_threshold = 200;
 
 // Private functions
@@ -32,6 +32,8 @@ int constraint_inc(int argc, option_t * options){
         sprintf(name, "%s_ctree%d.tree", options->output_name, i);
         add_command(command, name);
     }
+    printf("%s\n", command);
+    while(1);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling constraint_inc\n", GENERAL_ERROR);
 
     return 0;

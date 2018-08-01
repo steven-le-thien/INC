@@ -35,7 +35,7 @@ int make_constraint_trees(int * num_ctree, option_t * options, msa_t * msa){
                 tmp_options.input_name = options->tree_index == -1 ? stock_init_tree_name : options->tree_names[0];
                 tmp_options.output_name = options->tree_index == -1 ? stock_init_tree_name : options->tree_names[0];
                 if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
-                
+
                 tmp_options.input_name = in_name;
                 tmp_options.output_name = out_name;
                 tmp_options.tree_names = malloc(sizeof(char *));
@@ -96,18 +96,18 @@ int main(int argc, char ** argv){
     printf("checking for initial tree\n");
     if(options.tree_index == -1){
         options.tree_names = malloc(sizeof(char *));
-        options.tree_names[0] = stock_init_tree_name;
+        options.tree_names[0] = malloc(MAX_BUFFER_SIZE * sizeof(char));
+        sprintf(options.tree_names[0], "%sfirst_tree.tree", options.output_name);
         if(fasttree_job(&options)           != SUCCESS)         PRINT_AND_EXIT("fasttree_job failed in main\n", GENERAL_ERROR);
     }
 
-        printf("parsing input.. \n");
-        parse_input(&msa, options.input_name);
+    printf("parsing input.. \n");
+    parse_input(&msa, options.input_name);
 
 
     sprintf(name, "%sc_inc_input", options.output_name);
     f = fopen(name, "r");
     if(!f){
-
         printf("computing distance ...\n");
         compute_k2p_distance(&msa, &d);
 

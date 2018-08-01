@@ -3,7 +3,7 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
-#define DEBUG       0
+#define DEBUG       1
 
 #define MAXN                                    4000000 // these are number of nodes, not just number of leaves
 #define MAX_NAME_SIZE                           10
@@ -46,10 +46,15 @@
 
 
 // Math utils
-#define max(a, b) (a > b ? a : b)
+#define MAX(a, b)                               (a > b ? a : b)
 #define INT_MAX                                 10000000
 #define LN2                                     1.4426950408
-#define EPS                                     1e-7                                           
+#define EPS                                     1e-7              
+#define POWER(a, b)                             (b == 0 ? 1 : (b == 1 ? a : (b == 2 ? a * a : -1)))
+
+// Options util
+#define RECIP_WEIGHT                            1 
+#define SQUARE_RECIP_WEIGHT                     2
 
 
 #endif

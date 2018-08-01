@@ -103,7 +103,7 @@ int prim(INC_GRP * meta, MST_GRP * mst){
                 j = i;
             }  
         }
-        mst->max_w = max(mst->max_w, meta->d[cur_key][j]); 
+        mst->max_w = MAX(mst->max_w, meta->d[cur_key][j]); 
         mst->prim_ord[prim_ordering_counter++] = cur_key; 
     }
                                                                                             #if DEBUG 
