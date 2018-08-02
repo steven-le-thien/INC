@@ -153,7 +153,6 @@ int compute_k2p_distance(msa_t * msa, float *** d){
         (*d)[i] = malloc(msa->num_seq * sizeof(float));
 
     for(i = 0; i < msa->num_seq; i++){
-        // printf("i is %d\n", i);
         for(j = 0; j < msa->num_seq; j++){
             p = 0;
             q = 0;
@@ -168,7 +167,12 @@ int compute_k2p_distance(msa_t * msa, float *** d){
                 q += (s1[k] == 'A' && s2[k] == 'T') || 
                         (s1[k] == 'T' && s2[k] == 'A') ||
                         (s1[k] == 'G' && s2[k] == 'C') ||
-                        (s1[k] == 'C' && s2[k] == 'G');
+                        (s1[k] == 'C' && s2[k] == 'G') ||
+
+                        (s1[k] == 'A' && s2[k] == 'C') || 
+                        (s1[k] == 'C' && s2[k] == 'A') ||
+                        (s1[k] == 'G' && s2[k] == 'T') ||
+                        (s1[k] == 'T' && s2[k] == 'G');
             }
 
             (*d)[i][j] = -0.5 * log2((1.0 - 2.0 * p / msa->N - 1.0 * q / msa->N) * sqrt(1 - 2 * q / msa->N));

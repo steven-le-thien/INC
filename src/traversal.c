@@ -271,20 +271,20 @@ int bfs_vote(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int 
                                 != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
 
     // Revoting in case of ties
-    if(bfs_vote_implementation(meta->gtree,             // growing tree
-                            vote->st_lca.p,             // starting nodes and parents, notice the reverse of ordering since the subtree is within the growing tree
-                            vote->nd_lca.c,             // ending node
-                            vote->st_lca.c,
-                            meta->gtree->master_idx_map,// mapping to get the correct indexing from the distance matrix
-                            &(vote->ins.c),             // store the best edge 
-                            &(vote->ins.p),
-                            meta->gtree->n_node,                
-                            meta->d,                    // distance matrix 
-                            mst->prim_ord[i],           // query taxon
-                            mst->max_w,
-                            REVOTE_POWER, 
-                            &revote_map)                 // q0
-                                != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
+    // if(bfs_vote_implementation(meta->gtree,             // growing tree
+    //                         vote->st_lca.p,             // starting nodes and parents, notice the reverse of ordering since the subtree is within the growing tree
+    //                         vote->nd_lca.c,             // ending node
+    //                         vote->st_lca.c,
+    //                         meta->gtree->master_idx_map,// mapping to get the correct indexing from the distance matrix
+    //                         &(vote->ins.c),             // store the best edge 
+    //                         &(vote->ins.p),
+    //                         meta->gtree->n_node,                
+    //                         meta->d,                    // distance matrix 
+    //                         mst->prim_ord[i],           // query taxon
+    //                         mst->max_w,
+    //                         REVOTE_POWER, 
+    //                         &revote_map)                 // q0
+    //                             != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
                                                                                             #if DEBUG 
                                                                                                 printf("debug: the edge i'm attaching to is (%d %d) with i %d\n", vote->ins.c, vote->ins.p, i);
                                                                                             #endif

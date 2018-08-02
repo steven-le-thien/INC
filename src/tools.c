@@ -32,8 +32,7 @@ int constraint_inc(int argc, option_t * options){
         sprintf(name, "%s_ctree%d.tree", options->output_name, i);
         add_command(command, name);
     }
-    printf("%s\n", command);
-    while(1);
+    // printf("%s\n", command);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling constraint_inc\n", GENERAL_ERROR);
 
     return 0;
@@ -41,8 +40,7 @@ int constraint_inc(int argc, option_t * options){
 
 int fasttree_job(option_t * options){
     char command[CMD_BUFFER_SIZE];
-    sprintf(command, "FastTree -nt -gtr -quiet < %s > %s%s", options->input_name, options->output_name, options->tree_names[0]);
-
+    sprintf(command, "FastTree -nt -gtr -quiet < %s > %s", options->input_name, options->tree_names[0]);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling fasttree_job\n", GENERAL_ERROR);
     return 0;
 }
@@ -69,7 +67,6 @@ int subset_job(option_t * options){
 int nw_utils_job(option_t * options){
     char command[CMD_BUFFER_SIZE];
     sprintf(command, "nw_prune -v %s $(cat %s) > %s", options->tree_names[0], options->input_name, options->output_name);
-        printf("%s\n", command);
 
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling nw_utils\n", GENERAL_ERROR);
     return 0;
@@ -90,6 +87,20 @@ int raxml_job(option_t * options){
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling raxml job\n", GENERAL_ERROR);
     return 0; 
 }
+
+int distance_matrix_job(option_t * options){
+    char command[CMD_BUFFER_SIZE];
+
+    // This is too long
+    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%snexus; Quit;\" | paup4a163_osx -n;", options->input_name, options->output_name);
+    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
+
+    sprintf(command, "echo \"exe %snexus; DSet distance=K2P; SaveDist format=PHYLIP file=%sc_inc_input triangle=both diagonal=yes; Quit;\" | paup4a163_osx -n", options->output_name, options->output_name);
+    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
+    return 0;
+}
+
+
 
 /* Helper function to add a command into a string of commands
  * Input:   current string of command and the new command to be added 

@@ -10,14 +10,15 @@
 #include "tools.h"
 #include "msa.h"
 
-#define MODE 1
+#define MODE 0
 
 int         use_raxml = 0;
 // char        stock_path[] = "/Users/lethien_96/inc_ml_result/1000L1threshold_test";
 char        stock_init_tree_name[] = "first_tree.tree";
 
-int make_constraint_trees(int * num_ctree, option_t * options, msa_t * msa){
+int make_constraint_trees(int * num_ctree, option_t * options){
     FILE *      f;
+    msa_t       msa;
     char        in_name[CMD_BUFFER_SIZE];
     char        out_name[CMD_BUFFER_SIZE];
     char        msa_name[CMD_BUFFER_SIZE];
@@ -32,19 +33,21 @@ int make_constraint_trees(int * num_ctree, option_t * options, msa_t * msa){
         else {
             sprintf(out_name, "%s_ctree%d.tree", options->output_name, *num_ctree);
             if(MODE){// 2.1 Pruning the tree to get the subtree
-                tmp_options.input_name = options->tree_index == -1 ? stock_init_tree_name : options->tree_names[0];
-                tmp_options.output_name = options->tree_index == -1 ? stock_init_tree_name : options->tree_names[0];
+                tmp_options.input_name = options->tree_names[0];
+                tmp_options.output_name = options->tree_names[0];
                 if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
 
                 tmp_options.input_name = in_name;
                 tmp_options.output_name = out_name;
                 tmp_options.tree_names = malloc(sizeof(char *));
-                tmp_options.tree_names[0] = options->tree_index == -1 ? stock_init_tree_name : options->tree_names[0];
+                tmp_options.tree_names[0] = options->tree_names[0];
                 // printf("%s %s\n", tmp_options.tree_names[0], options->tree_names[0]);
                 if(nw_utils_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("nw_utils failed in main", GENERAL_ERROR);
             } else {// 2.2 Getting the msa and uses FastTree from them
+                parse_input(&msa, options->input_name);
+
                 sprintf(msa_name, "%s_ctree%d.msa", options->output_name, *num_ctree);
-                subset_msa(in_name, msa_name, msa);
+                subset_msa(in_name, msa_name, &msa);
 
                 if(use_raxml){
                     tmp_options.input_name = msa_name;
@@ -80,13 +83,12 @@ int make_constraint_trees(int * num_ctree, option_t * options, msa_t * msa){
     return 0;
 }
 
+
 int main(int argc, char ** argv){
     // Pipe in a bunch of programs together
     FILE *      f;
     char        name[MAX_BUFFER_SIZE];
     option_t    options;
-    msa_t       msa;
-    float **    d;
     int         num_ctree;
 
     if(init_options(&options)               != SUCCESS)         PRINT_AND_EXIT("init_options failed in main\n", GENERAL_ERROR);
@@ -101,23 +103,16 @@ int main(int argc, char ** argv){
         if(fasttree_job(&options)           != SUCCESS)         PRINT_AND_EXIT("fasttree_job failed in main\n", GENERAL_ERROR);
     }
 
-    printf("parsing input.. \n");
-    parse_input(&msa, options.input_name);
-
-
     sprintf(name, "%sc_inc_input", options.output_name);
     f = fopen(name, "r");
     if(!f){
-        printf("computing distance ...\n");
-        compute_k2p_distance(&msa, &d);
-
-        printf("writing matrix ...\n");
-        write_distance_matrix(d, &options, &msa);
+        printf("writing distance matrix using PAUP*...\n");
+        distance_matrix_job(&options);
     }
 
     // Making constraint trees using PASTA code
     if(subset_job(&options)                 != SUCCESS)         PRINT_AND_EXIT("subset job failed in main\n", GENERAL_ERROR);
-    make_constraint_trees(&num_ctree, &options, &msa);
+    make_constraint_trees(&num_ctree, &options);
 
     // Piping into constrained_inc code
     constraint_inc(num_ctree, &options);
