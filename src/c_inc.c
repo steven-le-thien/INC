@@ -15,6 +15,8 @@
 
 int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst);
 
+int skip_counter = 0;
+
 // Implementation of constrained version of the INC algorithm. 
 // Command line argument is as followed: constraint_inc -i <alignment file> -t <tree1> <tree2> ... 
 int main(int argc, char ** argv){
@@ -42,7 +44,11 @@ int main(int argc, char ** argv){
     // Compute the MST 
     printf("computing the mst...\n");
     if(prim(&meta, &mst)                    != SUCCESS)         PRINT_AND_EXIT("prim algorithm failed in main\n", GENERAL_ERROR);
+                                                                                                // printf("debug: the following print out prim's ctree\n");
 
+                                                                                                // for(int i = 0; i < meta.n_taxa; i++)
+                                                                                                //     printf("%d ", map.master_to_ctree[mst.prim_ord[i]]);
+                                                                                                // printf("\n");
     // Initialize growing tree using the first 3 taxa in the ordering
     printf("initializing the growing tree...\n");
     if(init_growing_tree(&meta, &map, &mst) != SUCCESS)         PRINT_AND_EXIT("init_growing_tree failed in main\n", GENERAL_ERROR);
@@ -78,12 +84,16 @@ int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
         // Determine the starting and ending of the valid subtree in the growing tree
         if(find_valid_subtree(meta, map, mst, &vote)
                                                 != SUCCESS)             PRINT_AND_EXIT("find_valid_subtree failed in main loop\n", GENERAL_ERROR);   
-                                                                                            #if DEBUG 
-                                                                                                 printf("the vald subtree is %d %d %d %d\n", vote.st_lca.p, vote.st_lca.c, vote.nd_lca.p, vote.nd_lca.c); 
-                                                                                            #endif
+                                                                                            // #if 1 
+                                                                                                 // printf("the vald subtree is %d %d %d %d\n", vote.st_lca.p, vote.st_lca.c, vote.nd_lca.p, vote.nd_lca.c); 
+                                                                                             // if(i == 4 ) while(1);
+                                                                                            // #endif
         // Vote!
+                                                                                             // printf("i is %d\n", i);
         if(bfs_vote(meta, map, mst, &vote, i)  
                                                 != SUCCESS)             PRINT_AND_EXIT("bfs_vote failed in main loop\n", GENERAL_ERROR);
+
+            // printf("thje attachng edge is %d %d\n", vote.ins.p, vote.ins.c);
 
         // Attach to the growing subtree
         if(attach_leaf_to_edge(meta, map, mst, &vote, i)
@@ -91,6 +101,7 @@ int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
         
     }
     printf("\n");
+    // printf("sip is %d\n", skip_counter);
     return 0;
 }
 

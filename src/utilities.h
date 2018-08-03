@@ -46,11 +46,14 @@
 
 
 // Math utils
-#define MAX(a, b)                               (a > b ? a : b)
+#define MAX(a, b)                               ((a) > (b) ? (a) : (b))
+#define MIN(a, b)                               ((a) < (b) ? (a) : (b))
+
 #define INT_MAX                                 10000000
 #define LN2                                     1.4426950408
 #define EPS                                     1e-7              
-#define POWER(a, b)                             (b == 0 ? 1 : (b == 1 ? a : (b == 2 ? a * a : -1)))
+#define POWER(a, b)                             ((b) == 0 ? 1 : ((b) == 1 ? (a) : ((b) == 2 ? (a) * (a) : -1)))
+#define ABS(a)                                  ((a) > 0 ? (a) : -(a))
 
 // Options util
 #define RECIP_WEIGHT                            1 

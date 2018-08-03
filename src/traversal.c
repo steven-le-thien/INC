@@ -13,6 +13,8 @@
 
 #define REVOTE_POWER 2
 
+extern int skip_counter;
+
 // All trees should be BTs 
 int dfs_lca_implementation(int node, int parent, BT * tree, int * dp, int * in_building, int * lca_parent, int * lca_child, int mode);
 int dfs_preorder(int node, int parent, BT * tree, int * in_building, int flag);
@@ -91,6 +93,7 @@ int init_vote(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int
                                                                                                 printf("failed test with flag %d\n", flag);
                                                                                                 while(1);
                                                                                             }
+                                                                                            printf("debug: done init vote %d\n", vote->ctree_idx);
                                                                                         #endif    
 
 
@@ -123,7 +126,8 @@ int find_bipartition(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vo
     int cur_node;           // loop counters 
     int j; 
 
-    if(meta->ctree[vote->ctree_idx]->n_node < 3) return 0; // trivial tree, don't have any bipartition (from lca)
+    
+    if(vote->ctree_idx < 0 || meta->ctree[vote->ctree_idx]->n_node < 3) return 0; // trivial tree, don't have any bipartition (from lca)
 
                                                                                             #if DEBUG 
                                                                                                 printf("debug: input to dfs_lca_implementation is: starting node %d with name %s, master index %d, tree %d\n", map->master_to_cidx[mst->prim_ord[i]], map->master_to_name[meta->ctree[vote->ctree_idx]->master_idx_map[map->master_to_cidx[mst->prim_ord[i]]]], meta->ctree[vote->ctree_idx]->master_idx_map[map->master_to_cidx[mst->prim_ord[i]]], vote->ctree_idx); 
@@ -252,6 +256,7 @@ int bfs_vote(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int 
                                                                                             #if DEBUG 
                                                                                                 printf("debug: the edge i'm attaching to is (%d %d) with i %d\n", vote->ins.c, vote->ins.p, i);
                                                                                             #endif
+                                                                                                skip_counter++;
         return 0;
     }
 
@@ -271,21 +276,37 @@ int bfs_vote(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int 
                                 != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
 
     // Revoting in case of ties
-    // if(bfs_vote_implementation(meta->gtree,             // growing tree
-    //                         vote->st_lca.p,             // starting nodes and parents, notice the reverse of ordering since the subtree is within the growing tree
-    //                         vote->nd_lca.c,             // ending node
-    //                         vote->st_lca.c,
-    //                         meta->gtree->master_idx_map,// mapping to get the correct indexing from the distance matrix
-    //                         &(vote->ins.c),             // store the best edge 
-    //                         &(vote->ins.p),
-    //                         meta->gtree->n_node,                
-    //                         meta->d,                    // distance matrix 
-    //                         mst->prim_ord[i],           // query taxon
-    //                         mst->max_w,
-    //                         REVOTE_POWER, 
-    //                         &revote_map)                 // q0
-    //                             != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
-                                                                                            #if DEBUG 
+    if(bfs_vote_implementation(meta->gtree,             // growing tree
+                            vote->st_lca.p,             // starting nodes and parents, notice the reverse of ordering since the subtree is within the growing tree
+                            vote->nd_lca.c,             // ending node
+                            vote->st_lca.c,
+                            meta->gtree->master_idx_map,// mapping to get the correct indexing from the distance matrix
+                            &(vote->ins.c),             // store the best edge 
+                            &(vote->ins.p),
+                            meta->gtree->n_node,                
+                            meta->d,                    // distance matrix 
+                            mst->prim_ord[i],           // query taxon
+                            mst->max_w,
+                            REVOTE_POWER, 
+                            &revote_map)                 // q0
+                                != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
+
+    // Second revoting
+    if(bfs_vote_implementation(meta->gtree,             // growing tree
+                            vote->st_lca.p,             // starting nodes and parents, notice the reverse of ordering since the subtree is within the growing tree
+                            vote->nd_lca.c,             // ending node
+                            vote->st_lca.c,
+                            meta->gtree->master_idx_map,// mapping to get the correct indexing from the distance matrix
+                            &(vote->ins.c),             // store the best edge 
+                            &(vote->ins.p),
+                            meta->gtree->n_node,                
+                            meta->d,                    // distance matrix 
+                            mst->prim_ord[i],           // query taxon
+                            mst->max_w,
+                            -REVOTE_POWER, 
+                            &revote_map)                 // q0
+                                != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);    
+                                                                                            #if DEBUG
                                                                                                 printf("debug: the edge i'm attaching to is (%d %d) with i %d\n", vote->ins.c, vote->ins.p, i);
                                                                                             #endif
     return 0;
@@ -414,30 +435,42 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
     int child_counter;
     int up;
     int u[2];
-    float upx, m;
+    float upx, m, M;
     float upp[2];
 
     float max_vote;
     int best_c, best_p;
 
     // Stat tracker
-    max_vote = -10000.0;
+    max_vote = revote_power ? (revote_map[0] ? 0.0 : -10000.0) : 0.0;
     best_c = valid_start;
     best_p = valid_start_parent;
+
+
+    int edge_counter = 0;
+
 
     memset(vote, 0, n * sizeof(float));
     memset(parent_map, -1, n * sizeof(int));
     memset(queue, -1, n * sizeof(int));
-    if(!revote_power) *revote_map = malloc(n * sizeof(int));
+    if(revote_power == 0) *revote_map = malloc(n * sizeof(int));
 
-    parent_map[valid_start] = valid_start_parent;
+    parent_map[valid_start] = valid_start_parent;   
 
-    edge_count = 0;
+    for(i = 0; i < tree->degree[valid_start]; i++)
+        if(tree->adj_list[valid_start][i].dest == valid_start_parent)
+            tree->adj_list[valid_start][i].master_idx = 0;
+    
+    for(i = 0; i < tree->degree[valid_start_parent]; i++)
+        if(tree->adj_list[valid_start_parent][i].dest == valid_start)
+            tree->adj_list[valid_start_parent][i].master_idx = 0;
+
+    edge_count = 1;
     qs = qe = 0;
 
     // Check valid pointer
-                                                                                            #if DEBUG && DEBUG_BFS 
-                                                                                                printf("debug: assert that all valid start are inner nodes\n"); 
+                                                                                            #if 1
+                                                                                                // printf("debug: assert that all valid start are inner nodes\n"); 
                                                                                                 if(valid_start != -1 && tree->degree[valid_start] != 3){
                                                                                                     printf("failed, valid start is %d with deg %d\n", valid_start, tree->degree[valid_start]);
                                                                                                     while(1);
@@ -446,13 +479,25 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
 
     // First vertex in the BFS
     queue[qe++] = valid_start; 
-
+                                                                                            #if DEBUG && DEBUG_BFS 
+                                                                                                 printf("debug: voting array is with max cote %f\n", max_vote);
+                                                                                                 for(i = 0; i < n - 1; i++){
+                                                                                                    printf("%f ", vote[i]);
+                                                                                                 } 
+                                                                                                 printf("\n");
+                                                                                            #endif
     while(qs != qe){
         cur_vertex = queue[qs++];
 
         // We only deal with inner edges
         if(tree->degree[cur_vertex] == 1 || cur_vertex == valid_end || cur_vertex == valid_start_parent) continue;
-
+                                                                                            #if DEBUG && DEBUG_BFS 
+                                                                                                 printf("debug: voting array is with max cote %f\n", max_vote);
+                                                                                                 for(i = 0; i < n - 1; i++){
+                                                                                                    printf("%f ", vote[i]);
+                                                                                                 } 
+                                                                                                 printf("\n");
+                                                                                            #endif
         // Work on better logic for this part
         for(i = 0; i < 3; i++){
             if(tree->adj_list[cur_vertex][i].dest == parent_map[cur_vertex]){
@@ -490,26 +535,29 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
                                                                                                                 printf("debug: in bfs, mapped is %d %d %d\n", mapping[up], mapping[u[0]], mapping[u[1]]);
                                                                                                                 printf("test all mem %f %f %f %f %f %f\n", d[mapping[up]][mapping[u[0]]], d[mapping[up]][mapping[u[1]]], d[mapping[up]][x], d[mapping[u[0]]][mapping[u[1]]], d[mapping[u[0]]][x],d[mapping[u[1]]][x]);
                                                                                                             #endif
-        upp[0] = d[mapping[up]][mapping[u[0]]] + d[mapping[u[1]]][x];
-        upp[1] = d[mapping[up]][mapping[u[1]]] + d[mapping[u[0]]][x];
+        upp[1] = d[mapping[up]][mapping[u[0]]] + d[mapping[u[1]]][x];
+        upp[0] = d[mapping[up]][mapping[u[1]]] + d[mapping[u[0]]][x];
         upx = d[mapping[up]][x] + d[mapping[u[0]]][mapping[u[1]]];
                         // printf("dw\n");
 
-        m = MAX(MAX(upp[0], upp[1]), upx);
+        m = MIN(MIN(upp[0], upp[1]), upx);
+        M = MAX(MAX(MAX(MAX(MAX(d[mapping[up]][mapping[u[0]]], d[mapping[up]][mapping[u[1]]]), d[mapping[up]][x]), d[mapping[1]][mapping[u[0]]]), d[mapping[1]][x]), d[x][mapping[u[0]]]); 
 
         for(i = 0; i < 2; i++) // base case, invalid vote
             vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx] = vote[tree->adj_list[cur_vertex][parent_idx].master_idx];
-        
-        if(revote_power || m - 8.0 * q0 <= EPS){ // if we are revoting, we don't care about validity
+                                                                                            #if  DEBUG && DEBUG_BFS 
+                                                                                                 printf("in dex is %d %d, vote is %f %f\n", tree->adj_list[cur_vertex][child_idx_a[i]].master_idx, tree->adj_list[cur_vertex][parent_idx].master_idx, vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx], vote[tree->adj_list[cur_vertex][parent_idx].master_idx]); 
+                                                                                            #endif
+        if(revote_power < 0 || M - 8.0 * q0 <= EPS){ // if we are revoting the second time, we don't care about validity
             if(m == upx)  // parent wins
                 for(i = 0; i < 2; i++)
-                    vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx] -= POWER(1.0 / m, revote_power);
+                    vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx] -= POWER(1.0 / M, ABS(revote_power));
 
             else if (m == upp[0])// u1 wins
-                vote[tree->adj_list[cur_vertex][child_idx_a[0]].master_idx] += POWER(1.0 / m, revote_power);
+                vote[tree->adj_list[cur_vertex][child_idx_a[0]].master_idx] += POWER(1.0 / M, ABS(revote_power));
 
             else if (m == upp[1])
-                vote[tree->adj_list[cur_vertex][child_idx_a[1]].master_idx] += POWER(1.0 / m, revote_power);
+                vote[tree->adj_list[cur_vertex][child_idx_a[1]].master_idx] += POWER(1.0 / M, ABS(revote_power));
         }
             
         
@@ -528,6 +576,7 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
             if(child_idx == parent_map[cur_vertex]) continue;
 
             parent_map[child_idx] = cur_vertex;
+            edge_counter++;
             queue[qe++] = tree->adj_list[cur_vertex][i].dest;
         }
     }
@@ -536,16 +585,24 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
                                                                                                             #endif
     *edge_child = best_c;
     *edge_parent = best_p;
-    if(!revote_power)
+    // if(revote_power > 0){ //first round, clear revote map 
+    //     for(i = 0; i < n - 1; i++)
+    //         (*revote_map)[i]
+    // }
+    if(revote_power == 0) // first round, write down revote
         for(i = 0; i < n - 1; i++)
             (*revote_map)[i] = vote[i] - max_vote < EPS && vote[i] - max_vote > -EPS;
-                                                                                            #if DEBUG 
+    else if(revote_power > 0) // second round
+        for(i = 0; i < n - 1; i++)
+            (*revote_map)[i] = ((*revote_map)[i]) && (vote[i] - max_vote < EPS && vote[i] - max_vote > -EPS);
+                                                                                            #if 0
                                                                                                  printf("debug: voting array is with max cote %f\n", max_vote);
                                                                                                  for(i = 0; i < n - 1; i++){
                                                                                                     printf("%f ", vote[i]);
                                                                                                  } 
                                                                                                  printf("\n");
                                                                                             #endif
+    // printf("edge counter is %d\n", edge_counter);
     return 0;
 }
 

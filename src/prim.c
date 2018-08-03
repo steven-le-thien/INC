@@ -37,9 +37,6 @@ int             heapify(min_heap * heap, int i);
  * Effect: allocate some memories, build some trees, open some files, init 2 arrays in map and 1 in meta 
  */
 int prim(INC_GRP * meta, MST_GRP * mst){
-                                                                                                #if DEBUG 
-                                                                                                    int dflag = 0;
-                                                                                                #endif
     // Heap variables
     min_heap * heap;
     heap_node * head;
@@ -78,7 +75,10 @@ int prim(INC_GRP * meta, MST_GRP * mst){
     prim_ordering_counter = 0;
     v_arr[0] = 0;
     heap->size = mst->n_taxa;
+                                                                                            #if DEBUG 
+                                                                                                                                                                                                 int dflag = 0;
 
+                                                                                            #endif
     // Prim's MST
     while(heap->size){
                                                                                             #if DEBUG 
@@ -106,7 +106,7 @@ int prim(INC_GRP * meta, MST_GRP * mst){
         mst->max_w = MAX(mst->max_w, meta->d[cur_key][j]); 
         mst->prim_ord[prim_ordering_counter++] = cur_key; 
     }
-                                                                                            #if DEBUG 
+                                                                                            #if DEBUG
                                                                                                 if(!dflag) printf("debug: heap property is good throughout at the root\n");
                                                                                                 else printf("debug: heap value is wrong, flag is %d\n", dflag);
 
@@ -119,6 +119,7 @@ int prim(INC_GRP * meta, MST_GRP * mst){
                                                                                                 for(i = 0; i < meta->n_taxa; i++)
                                                                                                     printf("%d ", mst->prim_par[i]);
                                                                                                 printf("\n");
+
                                                                                                 printf("debug: test: the prim ordering is unique\n");
                                                                                                 dflag = 0;
                                                                                                 for(i = 0; i < meta->n_taxa; i++)

@@ -7,6 +7,8 @@
 #include "tools.h"
 #include "utilities.h"
 
+char distance_model[] = "K2P";
+
 int use_true_tree_for_constraint_trees = 0;
 int subset_threshold = 200;
 
@@ -92,10 +94,10 @@ int distance_matrix_job(option_t * options){
     char command[CMD_BUFFER_SIZE];
 
     // This is too long
-    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%snexus; Quit;\" | paup4a163_osx -n;", options->input_name, options->output_name);
+    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=~/nexus; Quit;\" | paup4a163_osx -n;", options->input_name);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
 
-    sprintf(command, "echo \"exe %snexus; DSet distance=K2P; SaveDist format=PHYLIP file=%sc_inc_input triangle=both diagonal=yes; Quit;\" | paup4a163_osx -n", options->output_name, options->output_name);
+    sprintf(command, "echo \"exe ~/nexus; DSet distance=%s; SaveDist format=PHYLIP file=%sc_inc_input triangle=both diagonal=yes; Quit;\" | paup4a163_osx -n", distance_model, options->output_name);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
     return 0;
 }

@@ -11,6 +11,7 @@
 #include "msa.h"
 
 #define MODE 0
+#define use_constraint 1
 
 int         use_raxml = 0;
 // char        stock_path[] = "/Users/lethien_96/inc_ml_result/1000L1threshold_test";
@@ -76,6 +77,8 @@ int make_constraint_trees(int * num_ctree, option_t * options){
                 tmp_options.output_name = out_name;
                 if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
             }
+            // sprintf(msa_name, "cp ~/inc_ml_result/200_ctree%d.tree %s_ctree%d.tree", *num_ctree, options->output_name, *num_ctree);
+            // system(msa_name);
             (*num_ctree)++;
         }
     }
@@ -94,14 +97,24 @@ int main(int argc, char ** argv){
     if(init_options(&options)               != SUCCESS)         PRINT_AND_EXIT("init_options failed in main\n", GENERAL_ERROR);
     if(read_cmd_arg(argc, argv, &options)   != SUCCESS)         PRINT_AND_EXIT("read_cmd_arg failed in main\n", GENERAL_ERROR);
 
-    // Piping into fasttree 
-    printf("checking for initial tree\n");
-    if(options.tree_index == -1){
-        options.tree_names = malloc(sizeof(char *));
-        options.tree_names[0] = malloc(MAX_BUFFER_SIZE * sizeof(char));
-        sprintf(options.tree_names[0], "%sfirst_tree.tree", options.output_name);
-        if(fasttree_job(&options)           != SUCCESS)         PRINT_AND_EXIT("fasttree_job failed in main\n", GENERAL_ERROR);
-    }
+    if(use_constraint){
+        // Piping into fasttree 
+        printf("checking for initial tree\n");
+        if(options.tree_index == -1){
+            sprintf(name, "%sfirst_tree.tree", options.output_name);
+            f = fopen(name, "r");
+            if(!f){
+               options.tree_names = malloc(sizeof(char *));
+                           options.tree_names[0] = malloc(MAX_BUFFER_SIZE * sizeof(char));
+                           sprintf(options.tree_names[0], "%sfirst_tree.tree", options.output_name);
+                           if(fasttree_job(&options)           != SUCCESS)         PRINT_AND_EXIT("fasttree_job failed in main\n", GENERAL_ERROR);
+            }
+        }
+        // Making constraint trees using PASTA code
+        if(subset_job(&options)                 != SUCCESS)         PRINT_AND_EXIT("subset job failed in main\n", GENERAL_ERROR);
+        make_constraint_trees(&num_ctree, &options);
+    } else num_ctree = 0;
+    
 
     sprintf(name, "%sc_inc_input", options.output_name);
     f = fopen(name, "r");
@@ -109,10 +122,6 @@ int main(int argc, char ** argv){
         printf("writing distance matrix using PAUP*...\n");
         distance_matrix_job(&options);
     }
-
-    // Making constraint trees using PASTA code
-    if(subset_job(&options)                 != SUCCESS)         PRINT_AND_EXIT("subset job failed in main\n", GENERAL_ERROR);
-    make_constraint_trees(&num_ctree, &options);
 
     // Piping into constrained_inc code
     constraint_inc(num_ctree, &options);
