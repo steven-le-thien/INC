@@ -14,4 +14,5 @@ extern int upp_job(option_t * options);
 extern int subset_job(option_t * options);
 extern int nw_utils_job(option_t * options);
 extern int rm_label_job(option_t * options);
+extern int distance_matrix_job(option_t * options);
 #endif
