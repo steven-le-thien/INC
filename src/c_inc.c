@@ -71,7 +71,7 @@ int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
 
     // Init voting structure
     VOTE_GRP    vote;
-    printf("current iteration is  2");
+    printf("current iteration is 2...");
     for(i = 3; i < meta->n_taxa; i++){
         print_inline_iteration(i, j, meta->n_taxa, 3);
 

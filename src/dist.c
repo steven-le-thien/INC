@@ -38,14 +38,15 @@ int parse_distance_matrix(INC_GRP * meta, MAP_GRP * map, option_t * options){
     fclose(f);
 
     if(IS_FASTA(buf)){ // Route through a PHYLIP creater (for now) THIS FEATURE IS NOT TESTED
-        default_fp_options.input_name = options->input_name;
-        fastphylo_job(&default_fp_options);
+        // default_fp_options.input_name = options->input_name;
+        // fastphylo_job(&default_fp_options);
 
-                                                                                            #if DEBUG
-                                                                                                printf("debug: input file is not a  distance matrix\n"); 
-                                                                                            #endif
+        //                                                                                     #if DEBUG
+        //                                                                                         printf("debug: input file is not a  distance matrix\n"); 
+        //                                                                                     #endif
 
-        return read_phylip(meta, map, default_fp_options.output_name);
+        // return read_phylip(meta, map, default_fp_options.output_name);
+        return -1;
 
     } else if(IS_PHYLIP(buf)) {
                                                                                             #if DEBUG

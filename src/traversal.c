@@ -7,18 +7,14 @@
 #include "traversal.h"
 #include "utilities.h"
 #include "options.h"
-
-#define DEBUG_REC 0
-#define DEBUG_BFS 1
-
-#define REVOTE_POWER 2
+#include "quartet.h"
 
 extern int skip_counter;
 
 // All trees should be BTs 
 int dfs_lca_implementation(int node, int parent, BT * tree, int * dp, int * in_building, int * lca_parent, int * lca_child, int mode);
 int dfs_preorder(int node, int parent, BT * tree, int * in_building, int flag);
-int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid_start_parent, int *, int * edge_child, int * edge_parent, int n, float ** d, int x, float q0, int revote_power, int** revote_map);
+int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid_start_parent, int * mapping, int * edge_child, int * edge_parent, int n, float ** d, int x, float q0, int revote_power, int ** revote_map, int all_quartets, int revoting, char ** name_map, char * master_tree);
 int find_insertion_edge_implementation(int * vote, int * edge_child, int *edge_parent, int * additional_edge_child, int * addition_edge_parent, int num_edges);
 void dfs_backtrack(int node, int parent, int findme, BT * tree, int * next_to_start, int * found);
 int less_than_3_shared_taxa(INC_GRP * meta);
@@ -128,6 +124,20 @@ int find_bipartition(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vo
 
     
     if(vote->ctree_idx < 0 || meta->ctree[vote->ctree_idx]->n_node < 3) return 0; // trivial tree, don't have any bipartition (from lca)
+                                                                                                #if DEBUG 
+                                                                                                printf("debug: after bipartition\n"); 
+                                                                                                printf("debug: value of visited that is non zeor\n");
+                                                                                                for(j = 0; j < meta->n_taxa; j++)
+                                                                                                    if(meta->visited[j])
+                                                                                                        printf("(%d) %d in %d (%s), ", meta->visited[j], j, map->master_to_ctree[j], map->master_to_name[j]);
+                                                                                                printf("\n");
+
+                                                                                                printf("debug: this shoi;d ne all -1\n");
+                                                                                                for(j = 0; j < meta->ctree[vote->ctree_idx]->n_node; j++)
+                                                                                                    if(meta->ctree[vote->ctree_idx]->degree[j] == 1)
+                                                                                                        printf("%d(%s) ", meta->visited[meta->ctree[vote->ctree_idx]->master_idx_map[j]], map->master_to_name[meta->ctree[vote->ctree_idx]->master_idx_map[j]]);
+                                                                                                printf("\n");
+                                                                                            #endif
 
                                                                                             #if DEBUG 
                                                                                                 printf("debug: input to dfs_lca_implementation is: starting node %d with name %s, master index %d, tree %d\n", map->master_to_cidx[mst->prim_ord[i]], map->master_to_name[meta->ctree[vote->ctree_idx]->master_idx_map[map->master_to_cidx[mst->prim_ord[i]]]], meta->ctree[vote->ctree_idx]->master_idx_map[map->master_to_cidx[mst->prim_ord[i]]], vote->ctree_idx); 
@@ -141,6 +151,8 @@ int find_bipartition(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vo
                                 &(vote->c_lca.c), 
                                 0) != SUCCESS)              PRINT_AND_RETURN("dfs_lca_implementation failed in wrapper\n", GENERAL_ERROR);
                                                                                             #if DEBUG 
+                                                                                                    printf("placehiolder is %d\n", placeholder);
+
                                                                                                 printf("debug: output of dfs_loca is %d %d (%d %d) in master index with dp%d\n", vote->c_lca.p, vote->c_lca.c, meta->ctree[vote->ctree_idx]->master_idx_map[vote->c_lca.p], meta->ctree[vote->ctree_idx]->master_idx_map[vote->c_lca.c], placeholder); 
                                                                                             #endif
     // If there are less than 3 shared common taxa then don't bother
@@ -157,14 +169,7 @@ int find_bipartition(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vo
                             ++bp_counter) != SUCCESS)       PRINT_AND_RETURN("dfs_preorder failed in wrapper\n", GENERAL_ERROR);
 
     }
-                                                                                            #if DEBUG 
-                                                                                                printf("debug: after bipartition\n"); 
-                                                                                                printf("debug: value of visited that is non zeor\n");
-                                                                                                for(j = 0; j < meta->n_taxa; j++)
-                                                                                                    if(meta->visited[j])
-                                                                                                        printf("(%d) %d, ", meta->visited[j], j);
-                                                                                                printf("\n");
-                                                                                            #endif
+
     return 0;
 }
 
@@ -270,45 +275,53 @@ int bfs_vote(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int 
                             meta->gtree->n_node,                
                             meta->d,                    // distance matrix 
                             mst->prim_ord[i],           // query taxon
-                            mst->max_w,
-                            0, 
-                            &revote_map)                 // q0
+                            mst->max_w,                 // q0
+                            0,                          // power, 0 for 0-1, 1 or 2 for weighted voting
+                            &revote_map,                // map
+                            0,                          // are all quartets voting ?
+                            0,                          // is revoting ? 
+                            map->master_to_name,
+                            meta->mtree)
                                 != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
 
-    // Revoting in case of ties
-    if(bfs_vote_implementation(meta->gtree,             // growing tree
-                            vote->st_lca.p,             // starting nodes and parents, notice the reverse of ordering since the subtree is within the growing tree
-                            vote->nd_lca.c,             // ending node
-                            vote->st_lca.c,
-                            meta->gtree->master_idx_map,// mapping to get the correct indexing from the distance matrix
-                            &(vote->ins.c),             // store the best edge 
-                            &(vote->ins.p),
-                            meta->gtree->n_node,                
-                            meta->d,                    // distance matrix 
-                            mst->prim_ord[i],           // query taxon
-                            mst->max_w,
-                            REVOTE_POWER, 
-                            &revote_map)                 // q0
-                                != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
+    // if(bfs_vote_implementation(meta->gtree,             // growing tree
+    //                         vote->st_lca.p,             // starting nodes and parents, notice the reverse of ordering since the subtree is within the growing tree
+    //                         vote->nd_lca.c,             // ending node
+    //                         vote->st_lca.c,
+    //                         meta->gtree->master_idx_map,// mapping to get the correct indexing from the distance matrix
+    //                         &(vote->ins.c),             // store the best edge 
+    //                         &(vote->ins.p),
+    //                         meta->gtree->n_node,                
+    //                         meta->d,                    // distance matrix 
+    //                         mst->prim_ord[i],           // query taxon
+    //                         mst->max_w,                 // q0
+    //                         3,                          // power, 0 for 0-1, 1 or 2 for weighted voting
+    //                         &revote_map,                // map
+    //                         1,                          // are all quartets voting ?
+    //                         1)                          // is revoting ?
+    //                             != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
 
-    // Second revoting
-    if(bfs_vote_implementation(meta->gtree,             // growing tree
-                            vote->st_lca.p,             // starting nodes and parents, notice the reverse of ordering since the subtree is within the growing tree
-                            vote->nd_lca.c,             // ending node
-                            vote->st_lca.c,
-                            meta->gtree->master_idx_map,// mapping to get the correct indexing from the distance matrix
-                            &(vote->ins.c),             // store the best edge 
-                            &(vote->ins.p),
-                            meta->gtree->n_node,                
-                            meta->d,                    // distance matrix 
-                            mst->prim_ord[i],           // query taxon
-                            mst->max_w,
-                            -REVOTE_POWER, 
-                            &revote_map)                 // q0
-                                != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);    
+    // if(bfs_vote_implementation(meta->gtree,             // growing tree
+    //                         vote->st_lca.p,             // starting nodes and parents, notice the reverse of ordering since the subtree is within the growing tree
+    //                         vote->nd_lca.c,             // ending node
+    //                         vote->st_lca.c,
+    //                         meta->gtree->master_idx_map,// mapping to get the correct indexing from the distance matrix
+    //                         &(vote->ins.c),             // store the best edge 
+    //                         &(vote->ins.p),
+    //                         meta->gtree->n_node,                
+    //                         meta->d,                    // distance matrix 
+    //                         mst->prim_ord[i],           // query taxon
+    //                         mst->max_w,                 // q0
+    //                         2,                          // power, 0 for 0-1, 1 or 2 for weighted voting
+    //                         &revote_map,                // map
+    //                         1,                          // are all quartets voting ?
+    //                         1)                          // is revoting ?
+    //                             != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
+
                                                                                             #if DEBUG
                                                                                                 printf("debug: the edge i'm attaching to is (%d %d) with i %d\n", vote->ins.c, vote->ins.p, i);
                                                                                             #endif
+    free(revote_map);
     return 0;
 }
 
@@ -414,7 +427,7 @@ int dfs_preorder(int node, int parent, BT * tree, int * in_building, int flag){
     return 0;
 }
 
-int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid_start_parent, int * mapping, int * edge_child, int * edge_parent, int n, float ** d, int x, float q0, int revote_power, int ** revote_map){
+int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid_start_parent, int * mapping, int * edge_child, int * edge_parent, int n, float ** d, int x, float q0, int revote_power, int ** revote_map, int all_quartets, int revoting, char ** name_map, char * master_tree){
     // Initialize the first edge to some arbitrary array
     int edge_count;
     int qs, qe; // mock queue start/end pointers
@@ -428,35 +441,37 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
     int cur_vertex;
     int i, j;
 
-    // 4 point
+    // Quartet method
     int parent_sample;
     int child_sample[2];
     int child_idx_a[2];
     int child_counter;
     int up;
     int u[2];
-    float upx, m, M;
-    float upp[2];
+    int quartet_result;
+    float M;
 
     float max_vote;
     int best_c, best_p;
 
     // Stat tracker
-    max_vote = revote_power ? (revote_map[0] ? 0.0 : -10000.0) : 0.0;
+    max_vote = revoting ? (revote_map[0] ? 0.0 : -10000.0) : 0.0;
     best_c = valid_start;
     best_p = valid_start_parent;
 
-
+    // Initialization
     int edge_counter = 0;
-
 
     memset(vote, 0, n * sizeof(float));
     memset(parent_map, -1, n * sizeof(int));
     memset(queue, -1, n * sizeof(int));
-    if(revote_power == 0) *revote_map = malloc(n * sizeof(int));
+    if(!revoting) {
+        *revote_map = malloc(n * sizeof(int));
+        for(i = 0; i < n; i++)
+            (*revote_map)[i] = 1; // initially, all internal vertices are 'ties'
+    }
 
     parent_map[valid_start] = valid_start_parent;   
-
     for(i = 0; i < tree->degree[valid_start]; i++)
         if(tree->adj_list[valid_start][i].dest == valid_start_parent)
             tree->adj_list[valid_start][i].master_idx = 0;
@@ -535,34 +550,40 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
                                                                                                                 printf("debug: in bfs, mapped is %d %d %d\n", mapping[up], mapping[u[0]], mapping[u[1]]);
                                                                                                                 printf("test all mem %f %f %f %f %f %f\n", d[mapping[up]][mapping[u[0]]], d[mapping[up]][mapping[u[1]]], d[mapping[up]][x], d[mapping[u[0]]][mapping[u[1]]], d[mapping[u[0]]][x],d[mapping[u[1]]][x]);
                                                                                                             #endif
-        upp[1] = d[mapping[up]][mapping[u[0]]] + d[mapping[u[1]]][x];
-        upp[0] = d[mapping[up]][mapping[u[1]]] + d[mapping[u[0]]][x];
-        upx = d[mapping[up]][x] + d[mapping[u[0]]][mapping[u[1]]];
-                        // printf("dw\n");
 
-        m = MIN(MIN(upp[0], upp[1]), upx);
+
         M = MAX(MAX(MAX(MAX(MAX(d[mapping[up]][mapping[u[0]]], d[mapping[up]][mapping[u[1]]]), d[mapping[up]][x]), d[mapping[1]][mapping[u[0]]]), d[mapping[1]][x]), d[x][mapping[u[0]]]); 
 
         for(i = 0; i < 2; i++) // base case, invalid vote
             vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx] = vote[tree->adj_list[cur_vertex][parent_idx].master_idx];
-                                                                                            #if  DEBUG && DEBUG_BFS 
-                                                                                                 printf("in dex is %d %d, vote is %f %f\n", tree->adj_list[cur_vertex][child_idx_a[i]].master_idx, tree->adj_list[cur_vertex][parent_idx].master_idx, vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx], vote[tree->adj_list[cur_vertex][parent_idx].master_idx]); 
-                                                                                            #endif
-        if(revote_power < 0 || M - 8.0 * q0 <= EPS){ // if we are revoting the second time, we don't care about validity
-            if(m == upx)  // parent wins
+                                                                                                            #if  DEBUG && DEBUG_BFS 
+                                                                                                                printf("index is %d %d, vote is %f %f\n", tree->adj_list[cur_vertex][child_idx_a[i]].master_idx, tree->adj_list[cur_vertex][parent_idx].master_idx, vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx], vote[tree->adj_list[cur_vertex][parent_idx].master_idx]); 
+                                                                                                            #endif
+        if(all_quartets || M - 8.0 * q0 <= EPS){ // if all quartets are voting, we don't care about validity
+            // Do quartet method here
+#if use_four_point_method 
+            four_point_method(d, mapping[up], mapping[u[0]], mapping[u[1]], x, &quartet_result);
+#elif use_induced_quartet
+
+
+            induced_quartets(name_map[mapping[up]], name_map[mapping[u[0]]], name_map[mapping[u[1]]], name_map[x], &quartet_result, master_tree);
+#elif use_ml_method
+
+#endif
+            if(quartet_result == 0)  // parent wins
                 for(i = 0; i < 2; i++)
-                    vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx] -= POWER(1.0 / M, ABS(revote_power));
+                    vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx] -= POWER(1.0 / M, revote_power);
 
-            else if (m == upp[0])// u1 wins
-                vote[tree->adj_list[cur_vertex][child_idx_a[0]].master_idx] += POWER(1.0 / M, ABS(revote_power));
+            else if (quartet_result == 1)// u1 wins
+                vote[tree->adj_list[cur_vertex][child_idx_a[0]].master_idx] += POWER(1.0 / M, revote_power);
 
-            else if (m == upp[1])
-                vote[tree->adj_list[cur_vertex][child_idx_a[1]].master_idx] += POWER(1.0 / M, ABS(revote_power));
+            else if (quartet_result == 2)
+                vote[tree->adj_list[cur_vertex][child_idx_a[1]].master_idx] += POWER(1.0 / M, revote_power);
         }
             
         
         for(i = 0; i < 2; i++){
-            if((revote_power == 0 || (*revote_map)[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx]) // if we are revoting, we make sure that only latest best are eligible
+            if((*revote_map)[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx] // if we are revoting, we make sure that only latest best are eligible
                 && vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx] - max_vote > EPS){
                     max_vote = vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx];
                     best_c = tree->adj_list[cur_vertex][child_idx_a[i]].dest;
@@ -585,14 +606,11 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
                                                                                                             #endif
     *edge_child = best_c;
     *edge_parent = best_p;
-    // if(revote_power > 0){ //first round, clear revote map 
-    //     for(i = 0; i < n - 1; i++)
-    //         (*revote_map)[i]
-    // }
-    if(revote_power == 0) // first round, write down revote
+
+    if(!revoting) // first round, write down revote
         for(i = 0; i < n - 1; i++)
             (*revote_map)[i] = vote[i] - max_vote < EPS && vote[i] - max_vote > -EPS;
-    else if(revote_power > 0) // second round
+    else  // others
         for(i = 0; i < n - 1; i++)
             (*revote_map)[i] = ((*revote_map)[i]) && (vote[i] - max_vote < EPS && vote[i] - max_vote > -EPS);
                                                                                             #if 0

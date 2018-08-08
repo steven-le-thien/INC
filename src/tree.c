@@ -37,7 +37,13 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
     int i;  // loop variable
 
     // Init meta's field
+#if use_induced_quartet
+    meta->n_ctree = options->num_trees - 1;
+    meta->mtree = options->tree_names[0];
+#else 
     meta->n_ctree = options->num_trees;
+#endif
+
 
     // Malloc sequence
     meta->ctree             = malloc(meta->n_ctree * sizeof(BT *));
@@ -59,7 +65,11 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
 
     // Call the newick reader
     for(i = 0; i < meta->n_ctree; i++){
+#if use_induced_quartet
+        meta->ctree[i]      = read_newick(map, options->tree_names[i + 1], i);
+#else 
         meta->ctree[i]      = read_newick(map, options->tree_names[i], i);
+#endif
     }
 
                                                                                             #if DEBUG 

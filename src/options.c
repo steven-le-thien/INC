@@ -11,12 +11,6 @@
 // Constants
 int DEFAULT_NUM_OPTIONS = 3;
 
-char  DEFAULT_FP_OUTPUT_FORMAT[]    = "-O phylip";
-char  DEFAULT_FP_OUTPUT_NAME[]      = "defaultjob.distance_matrix.phy";
-char  DEFAULT_FP_INPUT_FORMAT[]     = "-I fasta";
-char  DEFAULT_FP_STDOUT[]           = "defaultjob.fastphylo.stdout";
-
-fp_options default_fp_options = {DEFAULT_FP_OUTPUT_FORMAT, DEFAULT_FP_OUTPUT_NAME, DEFAULT_FP_INPUT_FORMAT, NULL, DEFAULT_FP_STDOUT};
 
 /* Function to check the flag tag and assign its content to the appropriate field in option structure
  * This function also stores the index in argv to the content

@@ -3,12 +3,40 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
-#define DEBUG       0
 
+// Settings
+
+// Constraint trees settings
+#define use_constraint                          1
+#define recompute_constraint_trees              0
+
+#define use_subtree_for_constraint_trees        0
+#define use_raxml_for_constraint_trees          0
+#define use_fasttree_for_constraint_trees       0
+
+// Quartet method
+#define use_four_point_method                   0
+#define use_induced_quartet                     1
+#define use_induced_fasttree                    1
+#define use_ml_method                           0
+
+// Distance setting
+#define DISTANCE_MODEL                          "JC"
+
+// PASTA decomposition setting
+#define SS_THRESHOLD                            100
+
+// Debug setting
+#define DEBUG                                   0
+#define DEBUG_REC                               0
+#define DEBUG_BFS                               0
+
+#define REVOTE_POWER                            2
+
+// Limits 
 #define MAXN                                    4000000 // these are number of nodes, not just number of leaves
-#define MAX_NAME_SIZE                           10
-#define MAX_BUFFER_SIZE                         1000000
-
+#define MAX_NAME_SIZE                           1000
+#define MAX_BUFFER_SIZE                         10000
 #define GENERAL_BUFFER_SIZE                     10000
 
 // Error values
@@ -36,12 +64,10 @@
 #define PRINT_AND_RETURN(p, r)                  do{printf("%s\n", p); return r;}while(0) 
 #define PRINT_AND_EXIT(p, r)                    do{printf("%s\n", p); return r;}while(0) 
 #define print_inline_iteration(i, j, n, s)      do{\
-                                                    if(i % ((n) / 10) == 0 || i == s){ \
                                                         for(j = 0; j < (int)log10(i - 1) + 4; j++) \
                                                            printf("\b");\
                                                         printf("%d...", i);\
                                                         fflush(stdout);\
-                                                    }\
                                                 } while(0)
 
 
@@ -59,5 +85,12 @@
 #define RECIP_WEIGHT                            1 
 #define SQUARE_RECIP_WEIGHT                     2
 
+// // Malloc utils
+// #define SAFE_MALLOC_CALL(ptr, size)             do{\
+//                                                     ptr = malloc(size);
+//                                                     if(!ptr){
+
+//                                                     }
+                                                // } while(0)                          
 
 #endif
