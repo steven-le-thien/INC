@@ -122,12 +122,13 @@ int read_phylip(INC_GRP * meta, MAP_GRP * map, char * filename){
                 meta->d[i][j] = min;
 
 
-                                                                                                #if DEBUG 
+                                                                                                #if LARGE_DEBUG 
                                                                                                     printf("debug: this prints out the list of name\n");
                                                                                                     for(i = 0; i < meta->n_taxa; i++)
                                                                                                         printf("%d:%s ", i, map->master_to_name[i]); 
                                                                                                     printf("\n");
-
+                                                                                                #endif 
+                                                                                                #if DEBUG
                                                                                                     printf("debug: this tests whether all the distances are positive\n");
                                                                                                     int k;
                                                                                                     k = 0;
@@ -138,13 +139,14 @@ int read_phylip(INC_GRP * meta, MAP_GRP * map, char * filename){
                                                                                                             else if(i != j) printf("debug: problem is %f, at %d %d, name is %s %s\n", meta->d[i][j], i, j, map->master_to_name[i], map->master_to_name[j]);
                                                                                                     printf("debug: double check, num sequence is %d\n", meta->n_taxa);
                                                                                                     printf("debug: there are %d positive entries\n", k);
-                                                                                                    for(i = 0; i < meta->n_taxa; i++){
-                                                                                                        for(j = 0; j < meta->n_taxa; j++){
-                                                                                                            printf("%f ", meta->d[i][j]);
-                                                                                                        }
-                                                                                                        printf("\n");
-                                                                                                    }
-                                                                                                    printf("1 45 %f 1 57 %f 1 27 %f 45 57 %f 45 27 %f 57 27 %f\n", meta->d[0][44], meta->d[0][56], meta->d[0][26], meta->d[44][56], meta->d[44][26],meta->d[56][26]);
+                                                                                                    // for(i = 0; i < meta->n_taxa; i++){
+                                                                                                    //     for(j = 0; j < meta->n_taxa; j++){
+                                                                                                    //         printf("%f ", meta->d[i][j]);
+                                                                                                    //     }
+                                                                                                    //     printf("\n");
+                                                                                                    // }
+                                                                                                    // while(1);
+                                                                                                    // printf("1 45 %f 1 57 %f 1 27 %f 45 57 %f 45 27 %f 57 27 %f\n", meta->d[0][44], meta->d[0][56], meta->d[0][26], meta->d[44][56], meta->d[44][26],meta->d[56][26]);
                                                                                                 #endif
     return 0;
 }

@@ -74,6 +74,7 @@ int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
     printf("current iteration is 2...");
     for(i = 3; i < meta->n_taxa; i++){
         print_inline_iteration(i, j, meta->n_taxa, 3);
+        // printf("i is %d\n", i);
 
         if(init_vote(meta, map, mst, &vote, i)   != SUCCESS)             PRINT_AND_EXIT("init_vote failed in main loop\n", GENERAL_ERROR);
 

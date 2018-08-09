@@ -5,7 +5,8 @@
 
 
 extern int four_point_method(float ** d, int u1, int u2, int up, int x, int * res);
-extern int induced_quartets(char * up, char * u1, char * u2, char * x, int * res, char * tree_name);
+extern int induced_quartets_save_space(char * up, char * u1, char * u2, char * x, int * res, char * tree_name);
+extern int induced_quartets_save_time(float ** d, int u1, int u2, int up, int x, int * res);
 
 
 #endif

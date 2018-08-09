@@ -110,15 +110,15 @@ int prim(INC_GRP * meta, MST_GRP * mst){
                                                                                                 if(!dflag) printf("debug: heap property is good throughout at the root\n");
                                                                                                 else printf("debug: heap value is wrong, flag is %d\n", dflag);
 
-                                                                                                printf("debug: the following print out prim's ordering\n");
-                                                                                                for(i = 0; i < meta->n_taxa; i++)
-                                                                                                    printf("%d ", mst->prim_ord[i]);
-                                                                                                printf("\n");
+                                                                                                // printf("debug: the following print out prim's ordering\n");
+                                                                                                // for(i = 0; i < meta->n_taxa; i++)
+                                                                                                //     printf("%d ", mst->prim_ord[i]);
+                                                                                                // printf("\n");
 
-                                                                                                printf("debug: the following print out prim's tree (parenting)\n");
-                                                                                                for(i = 0; i < meta->n_taxa; i++)
-                                                                                                    printf("%d ", mst->prim_par[i]);
-                                                                                                printf("\n");
+                                                                                                // printf("debug: the following print out prim's tree (parenting)\n");
+                                                                                                // for(i = 0; i < meta->n_taxa; i++)
+                                                                                                //     printf("%d ", mst->prim_par[i]);
+                                                                                                // printf("\n");
 
                                                                                                 printf("debug: test: the prim ordering is unique\n");
                                                                                                 dflag = 0;
@@ -149,6 +149,7 @@ int prim(INC_GRP * meta, MST_GRP * mst){
                                                                                                 }
                                                                                                 if(!dflag) printf("pass test\n");
                                                                                                 else printf("failed test with flag %d\n", dflag);
+                                                                                                // while(1);
                                                                                             #endif
     return 0;
 }

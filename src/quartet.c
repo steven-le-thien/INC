@@ -27,7 +27,7 @@ int four_point_method(float ** d, int up, int u1, int u2, int x, int * res){
 	return 0;
 }
 
-int induced_quartets(char * up, char * u1, char * u2, char * x, int * res, char * tree_name){
+int induced_quartets_save_space(char * up, char * u1, char * u2, char * x, int * res, char * tree_name){
 	char sibling1[MAX_NAME_SIZE];
 	char sibling2[MAX_NAME_SIZE];
 	char cur_char;

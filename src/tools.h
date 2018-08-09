@@ -15,7 +15,7 @@ extern int distance_matrix_job(option_t * options);
 extern int raxml_job(option_t * options);
 
 // Wrappers
-extern int make_subtree_label(char * tree_name, char * out_name);
+extern int make_subset_label(char * tree_name, char * out_name);
 extern int make_subtree(char * label, char * outname, char * tree_name); 
 extern int make_fasttree_constraint(char * msa_name, char * out_name);
 extern int make_raxml_constraint(char * input_path, char * msa_name, char * out_name); 

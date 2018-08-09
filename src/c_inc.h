@@ -21,12 +21,15 @@ typedef struct inc_grp{
 	int 		n_taxa;
 	int 		n_ctree;
 
+	char * 		mtree_name;
+
 	BT * 		gtree;
-	BT **		ctree;		// n_ctree-length array of constraint trees
+	BT * 		mtree;
+	BT **		ctree;		// n_ctree-length array of constraint tree
 	int * 		visited;	// n_taxa-lenght array of visted taxa in the building tree, this is in the master indexing scheme
 						
-	float ** 	d; // n_taxa by n_taxa array of distance matrix
-	char * 		mtree;
+	float ** 	d; 			// n_taxa by n_taxa array of distance matrix
+	float ** 	dm; 		// n_taxa by n_taxa array of distance matrix on the FastTree
 } INC_GRP;
 
 typedef struct mapping{

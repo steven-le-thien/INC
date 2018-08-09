@@ -276,12 +276,12 @@ int bfs_vote(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int 
                             meta->d,                    // distance matrix 
                             mst->prim_ord[i],           // query taxon
                             mst->max_w,                 // q0
-                            0,                          // power, 0 for 0-1, 1 or 2 for weighted voting
+                            2,                          // power, 0 for 0-1, 1 or 2 for weighted voting
                             &revote_map,                // map
                             0,                          // are all quartets voting ?
                             0,                          // is revoting ? 
                             map->master_to_name,
-                            meta->mtree)
+                            meta->mtree_name)
                                 != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
 
     // if(bfs_vote_implementation(meta->gtree,             // growing tree
@@ -295,10 +295,12 @@ int bfs_vote(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int 
     //                         meta->d,                    // distance matrix 
     //                         mst->prim_ord[i],           // query taxon
     //                         mst->max_w,                 // q0
-    //                         3,                          // power, 0 for 0-1, 1 or 2 for weighted voting
+    //                         2,                          // power, 0 for 0-1, 1 or 2 for weighted voting
     //                         &revote_map,                // map
     //                         1,                          // are all quartets voting ?
-    //                         1)                          // is revoting ?
+    //                         1,
+    //                         map->master_to_name,
+    //                         meta->mtree_name)                          // is revoting ?
     //                             != SUCCESS)     PRINT_AND_RETURN("bfs_vote_implementation failed in bfs_voite\n", GENERAL_ERROR);
 
     // if(bfs_vote_implementation(meta->gtree,             // growing tree
@@ -521,6 +523,9 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
             }
         }
 
+                                                                                            #if DEBUG 
+                                                                                                 printf("deug: i shuld be snmall %d\n", tree->adj_list[cur_vertex][parent_idx].sample); 
+                                                                                            #endif
         child_counter = 0;
         for(i = 0; i < 3; i++)
             if(i != parent_idx){
@@ -537,7 +542,6 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
                 tree->adj_list[tree->adj_list[cur_vertex][i].dest][j].master_idx = edge_count;
                 edge_count++;
             }
-
         // 4 point
         up = tree->adj_list[cur_vertex][parent_idx].sample;
         u[0] = tree->adj_list[cur_vertex][child_idx_a[0]].sample;
@@ -614,7 +618,7 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
         for(i = 0; i < n - 1; i++)
             (*revote_map)[i] = ((*revote_map)[i]) && (vote[i] - max_vote < EPS && vote[i] - max_vote > -EPS);
                                                                                             #if 0
-                                                                                                 printf("debug: voting array is with max cote %f\n", max_vote);
+                                                                                                 printf("debug: voting array is with max cote %f %f\n", q0, M);
                                                                                                  for(i = 0; i < n - 1; i++){
                                                                                                     printf("%f ", vote[i]);
                                                                                                  } 

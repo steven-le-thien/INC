@@ -14,7 +14,7 @@ int subset_threshold = SS_THRESHOLD;
 void add_command(char * current_command, char * new_command);
 int find_prefix_and_dir_from_path(char * path, char * prefix, char * dir);
 
-int make_subtree_label(char * tree_name, char * out_name){
+int make_subset_label(char * tree_name, char * out_name){
     option_t tmp_options; 
 
     tmp_options.input_name = tree_name;
@@ -26,7 +26,6 @@ int make_subtree_label(char * tree_name, char * out_name){
 
 int make_subtree(char * label, char * outname, char * tree_name){
     option_t tmp_options; 
-
     tmp_options.input_name = tree_name;
     tmp_options.output_name = tree_name; // replacing file
     if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in make_subtree\n", GENERAL_ERROR);
@@ -63,13 +62,14 @@ int make_raxml_constraint(char * input_path, char * msa_name, char * out_name){
     char        raxml_dir_name[10000];
 
     // Find the out_name and dir_name for RAxML (this is required only for RAxML)
-    find_prefix_and_dir_from_path(input_path, raxml_out_name, raxml_dir_name);
+    find_prefix_and_dir_from_path(out_name, raxml_out_name, raxml_dir_name);
 
     tmp_options.input_name = msa_name;
     tmp_options.output_name = raxml_dir_name;
-    tmp_options.tree_names = (char **) (&(raxml_out_name[0]));
+    tmp_options.tree_names = malloc(sizeof(char *));
+    tmp_options.tree_names[0] = raxml_out_name;
     if(raxml_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
-
+    
     sprintf(raxml_name, "%sRAxML_bestTree.%s", raxml_dir_name, raxml_out_name);
     tmp_options.input_name = raxml_name;
     tmp_options.output_name = out_name;
@@ -126,7 +126,7 @@ int subset_job(option_t * options){
 int nw_utils_job(option_t * options){
     char command[GENERAL_BUFFER_SIZE];
     sprintf(command, "nw_prune -v %s $(cat %s) > %s", options->tree_names[0], options->input_name, options->output_name);
-
+    printf("%s\n", command);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling nw_utils\n", GENERAL_ERROR);
     return 0;
 }
@@ -134,7 +134,7 @@ int nw_utils_job(option_t * options){
 int rm_label_job(option_t * options){
     char command[GENERAL_BUFFER_SIZE];
     sprintf(command, "remove_internal_labels.py -t %s -o %s", options->input_name, options->output_name);
-
+    printf("%s\n", command);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling rm_label_job\n", GENERAL_ERROR);
     return 0;
 }
