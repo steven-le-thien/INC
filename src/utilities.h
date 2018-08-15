@@ -3,12 +3,42 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
-#define DEBUG       0
 
+// Settings
+
+// Constraint trees settings
+#define use_constraint                          1
+#define recompute_constraint_trees              0
+
+#define use_subtree_for_constraint_trees        0
+#define use_raxml_for_constraint_trees          0
+#define use_fasttree_for_constraint_trees       0
+
+// Quartet method
+#define use_four_point_method                   1
+#define use_induced_quartet                     0
+#define use_induced_fasttree                    0
+#define use_ml_method                           0
+#define MAKE_TIME                               0
+
+// Distance setting
+#define DISTANCE_MODEL                          "logDet"
+
+// PASTA decomposition setting
+#define SS_THRESHOLD                            1000
+
+// Debug setting
+#define DEBUG                                   0
+#define LARGE_DEBUG                             0
+#define DEBUG_REC                               0
+#define DEBUG_BFS                               0
+
+#define REVOTE_POWER                            2
+
+// Limits 
 #define MAXN                                    4000000 // these are number of nodes, not just number of leaves
-#define MAX_NAME_SIZE                           10
-#define MAX_BUFFER_SIZE                         1000000
-
+#define MAX_NAME_SIZE                           1000
+#define MAX_BUFFER_SIZE                         10000
 #define GENERAL_BUFFER_SIZE                     10000
 
 // Error values
@@ -36,8 +66,8 @@
 #define PRINT_AND_RETURN(p, r)                  do{printf("%s\n", p); return r;}while(0) 
 #define PRINT_AND_EXIT(p, r)                    do{printf("%s\n", p); return r;}while(0) 
 #define print_inline_iteration(i, j, n, s)      do{\
-                                                    if(i % ((n) / 10) == 0 || i == s){ \
-                                                        for(j = 0; j < (int)log10(i - 1) + 4; j++) \
+                                                    if(i % (n / 10) == 0){\
+                                                        for(j = 0; j < (i <= n / 10 ? 0 : (int)log10(i - n / 10)) + 4; j++) \
                                                            printf("\b");\
                                                         printf("%d...", i);\
                                                         fflush(stdout);\
@@ -46,15 +76,25 @@
 
 
 // Math utils
-#define MAX(a, b)                               (a > b ? a : b)
+#define MAX(a, b)                               ((a) > (b) ? (a) : (b))
+#define MIN(a, b)                               ((a) < (b) ? (a) : (b))
+
 #define INT_MAX                                 10000000
 #define LN2                                     1.4426950408
 #define EPS                                     1e-7              
-#define POWER(a, b)                             (b == 0 ? 1 : (b == 1 ? a : (b == 2 ? a * a : -1)))
+#define POWER(a, b)                             ((b) == 0 ? 1 : ((b) == 1 ? (a) : ((b) == 2 ? (a) * (a) : ((b) == 3 ? (a) * (a) * (a) : ((b) == 4 ? (a) * (a) * (a) * (a) : -1)))))
+#define ABS(a)                                  ((a) > 0 ? (a) : -(a))
 
 // Options util
 #define RECIP_WEIGHT                            1 
 #define SQUARE_RECIP_WEIGHT                     2
 
+// // Malloc utils
+// #define SAFE_MALLOC_CALL(ptr, size)             do{\
+//                                                     ptr = malloc(size);
+//                                                     if(!ptr){
+
+//                                                     }
+                                                // } while(0)                          
 
 #endif

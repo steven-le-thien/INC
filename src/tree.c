@@ -37,7 +37,22 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
     int i;  // loop variable
 
     // Init meta's field
+#if use_induced_quartet
+    meta->n_ctree = options->num_trees - 1;
+    meta->mtree_name = options->tree_names[0];
+    meta->mtree = read_newick(NULL, meta->mtree_name, -1);
+
+    meta->dm = malloc(meta->n_taxa * sizeof(float*));
+    if(!meta->dm)           PRINT_AND_RETURN("malloc failed to construct dm in parse_tree\n", MALLOC_ERROR);
+    for(i = 0; i < meta->n_taxa; i++){
+        meta->dm[i] = malloc(meta->n_taxa * sizeof(float));
+    }
+
+    meta->dm = construct_unweighted_matrix()
+#else 
     meta->n_ctree = options->num_trees;
+#endif
+
 
     // Malloc sequence
     meta->ctree             = malloc(meta->n_ctree * sizeof(BT *));
@@ -59,7 +74,11 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
 
     // Call the newick reader
     for(i = 0; i < meta->n_ctree; i++){
+#if use_induced_quartet
+        meta->ctree[i]      = read_newick(map, options->tree_names[i + 1], i);
+#else 
         meta->ctree[i]      = read_newick(map, options->tree_names[i], i);
+#endif
     }
 
                                                                                             #if DEBUG 
@@ -67,7 +86,7 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
                                                                                                 printf("debug: high level read newick tree debug, the following print out number of nodes of each constraint trees and their sum\n");
                                                                                                 int sum = 0;
                                                                                                 for(i = 0; i < meta->n_ctree; i++){
-                                                                                                    printf("%d ", meta->ctree[i]->n_node);
+                                                                                                    // printf("%d ", meta->ctree[i]->n_node);
                                                                                                     sum += meta->ctree[i]->n_node;
                                                                                                 }
                                                                                                 printf("\n");
@@ -86,7 +105,7 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
                                                                                                         k3 += meta->ctree[i]->degree[j] == 3;
                                                                                                         k4 += (meta->ctree[i]->degree[j] != 1) && ( meta->ctree[i]->degree[j] != 3);
                                                                                                     }
-                                                                                                    printf("for tree %d, node with deg 1 is %d, 3 is %d, total is %d, n_node is %d, non13 is %d\n", i, k1, k3, k1 + k3, meta->ctree[i]->n_node, k4);
+                                                                                                    // printf("for tree %d, node with deg 1 is %d, 3 is %d, total is %d, n_node is %d, non13 is %d\n", i, k1, k3, k1 + k3, meta->ctree[i]->n_node, k4);
                                                                                                     kt += k1;
                                                                                                 }
                                                                                                 printf("debug: total number of leaf is %d\n", kt);
@@ -135,16 +154,18 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
 
                                                                                                 if(!flag) printf("passed test\n");
                                                                                                 else printf("failed test\n");
+                                                                                             
 
-                                                                                                printf("debug: checking 2 master maps, all should be non empty, the first oen should be unique\n");
-                                                                                                for(i = 0; i < meta->n_taxa; i++){
-                                                                                                    printf("%d ", map->master_to_ctree[i]);
-                                                                                                }
-                                                                                                printf("\n");
-                                                                                                for(i = 0; i < meta->n_taxa; i++){
-                                                                                                    printf("%d ", map->master_to_cidx[i]);
-                                                                                                }
-                                                                                                printf("\n");
+                                                                                                // printf("debug: checking 2 master maps, all should be non empty, the first oen should be unique\n");
+                                                                                                // for(i = 0; i < meta->n_taxa; i++){
+                                                                                                //     printf("%d ", map->master_to_ctree[i]);
+                                                                                                // }
+                                                                                                // printf("\n");
+                                                                                                // for(i = 0; i < meta->n_taxa; i++){
+                                                                                                //     printf("%d ", map->master_to_cidx[i]);
+                                                                                                // }
+                                                                                                // printf("\n");
+                                                                                                // while(1);
                                                                                             #endif
     
                                                                                                     
@@ -195,7 +216,7 @@ int init_growing_tree(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
     // This is a bit tricky, we need to find adjacent nodes in the mst
     meta->gtree->adj_list[0][0].sample = 1; // fist vertex in prim is obviously connected to second
     meta->gtree->adj_list[1][0].sample = 0; // vice versa
-    meta->gtree->adj_list[2][0].sample = mst->prim_par[mst->prim_ord[2]]; // check if the parent of 3rd vertex in mst is adjacent to 0 or 1
+    meta->gtree->adj_list[2][0].sample = map->master_to_gidx[mst->prim_par[mst->prim_ord[2]]]; // check if the parent of 3rd vertex in mst is adjacent to 0 or 1
                                                                                             #if DEBUG 
                                                                                                 printf("debug: testing modules for initializing the tree\n"); 
 
@@ -210,7 +231,17 @@ int init_growing_tree(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
                                                                                                     if(meta->visited[i] != 0) printf("%d(%d) ", i, meta->visited[i]);
                                                                                                 }
                                                                                                 printf("\n");
+                                                                                                // while(1);
                                                                                             #endif  
+                                                                                            #if DEBUG 
+                                                                                                BT * growing_tree = meta->gtree;
+                                                                                                 // printf("debug: adjacent_in_mst is %d\n", adjacent_in_mst); 
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[0][0].sample, growing_tree->adj_list[0][1].sample, growing_tree->adj_list[0][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[1][0].sample, growing_tree->adj_list[1][1].sample, growing_tree->adj_list[1][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[2][0].sample, growing_tree->adj_list[2][1].sample, growing_tree->adj_list[2][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[3][0].sample, growing_tree->adj_list[3][1].sample, growing_tree->adj_list[3][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[4][0].sample, growing_tree->adj_list[4][1].sample, growing_tree->adj_list[4][2].sample);
+                                                                                            #endif
     return 0;
 }
 
@@ -239,7 +270,7 @@ int attach_leaf_to_edge(INC_GRP * meta,  MAP_GRP * map,MST_GRP * mst, VOTE_GRP *
 
 
 int write_newick(BT * tree, char * filename, char ** name_map){
-    char buffer[MAX_BUFFER_SIZE];
+    char buffer[MAX_BUFFER_SIZE * 100];
     FILE * f;
 
     // Subdivide an edge and make it the root
@@ -264,6 +295,14 @@ int attach_leaf_to_edge_impl(BT * growing_tree, int x, int additional_edge_paren
     // Because of the way we mallocate the growing tree, there are already memory for the extra 2 nodes 
     growing_tree->n_node += 2;
 
+                                                                                            #if DEBUG 
+                                                                                                 printf("debug: adjacent_in_mst is %d\n", adjacent_in_mst); 
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[0][0].sample, growing_tree->adj_list[0][1].sample, growing_tree->adj_list[0][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[1][0].sample, growing_tree->adj_list[1][1].sample, growing_tree->adj_list[1][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[2][0].sample, growing_tree->adj_list[2][1].sample, growing_tree->adj_list[2][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[3][0].sample, growing_tree->adj_list[3][1].sample, growing_tree->adj_list[3][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[4][0].sample, growing_tree->adj_list[4][1].sample, growing_tree->adj_list[4][2].sample);
+                                                                                            #endif
     // Subdivide the edge
     if(swap_adajcency(additional_edge_parent, growing_tree->n_node - 2, additional_edge_child, growing_tree)
                     != SUCCESS) PRINT_AND_RETURN("first swap_adajcency failed in attach_leaf_to_edge_impl\n", GENERAL_ERROR);
@@ -278,6 +317,12 @@ int attach_leaf_to_edge_impl(BT * growing_tree, int x, int additional_edge_paren
     growing_tree->adj_list[growing_tree->n_node - 1][0].sample = adjacent_in_mst;
                                                                                             #if DEBUG 
                                                                                                  printf("debug: adjacent_in_mst is %d\n", adjacent_in_mst); 
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[0][0].sample, growing_tree->adj_list[0][1].sample, growing_tree->adj_list[0][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[1][0].sample, growing_tree->adj_list[1][1].sample, growing_tree->adj_list[1][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[2][0].sample, growing_tree->adj_list[2][1].sample, growing_tree->adj_list[2][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[3][0].sample, growing_tree->adj_list[3][1].sample, growing_tree->adj_list[3][2].sample);
+                                                                                                 printf("%d %d %d\n", growing_tree->adj_list[4][0].sample, growing_tree->adj_list[4][1].sample, growing_tree->adj_list[4][2].sample);
+                                                                                                // while(1);
                                                                                             #endif
     growing_tree->master_idx_map[growing_tree->n_node - 1] = x;
 
@@ -402,15 +447,10 @@ BT * read_newick(MAP_GRP * map, char * filename, int tree_idx){
 
         for(j = 0; j < degree[1]; j++)
             if(adj_list[1][j].dest == -1) adj_list[1][j].dest = i - 1;
-        // printf("j is %d\n", j);
 
         for(j = 0; j < degree[i]; j++)
             if(adj_list[i][j].dest == -1) adj_list[i][j].dest = 0;
-        // printf("j is %d\n", j);
-
-        // printf("is is %d\n", i);
     }
-    // printf("0 is %d %d %d 3 is %d %d %d\n", adj_list[1][0].dest, adj_list[1][1].dest, adj_list[1][2].dest, adj_list[4][0].dest, adj_list[4][1].dest, adj_list[4][2].dest);
 
     mock = malloc(max_node * sizeof(BT_edge));
     for(i = 0;i < max_node; i++)
@@ -514,9 +554,11 @@ int save_name(int cur_node, char * name, MAP_GRP * map, int tree_idx){
             if(i == map->n_taxa - 1) return 0; // no name matches, which is fine for internal nodes
         } else break;
     }
+    if(map){
+        map->master_to_ctree[i]     = tree_idx;
+        map->master_to_cidx[i]      = cur_node - 1;
+    }
 
-    map->master_to_ctree[i]     = tree_idx;
-    map->master_to_cidx[i]      = cur_node - 1;
     master_idx_map[cur_node]    = i;
 
     strclr(name);

@@ -17,11 +17,18 @@ int subset_msa(char * infile, char * outfile, msa_t * msa){
     FILE * f;
     FILE * p;
     char taxon_name[MAX_NAME_SIZE];
-    int i;
-printf("%s %s\n", infile, outfile);
+    int i, j;
+
+    msa_t sub_msa;
+    int * masked; 
+
+    sprintf(taxon_name, "%s_tmp", outfile);
     f = fopen(infile, "r");
-    p = fopen(outfile, "w"); 
+
+    p = fopen(taxon_name, "w"); 
+
     if(!f) PRINT_AND_RETURN("file does not exsts in subset msa", OPEN_ERROR);
+    masked = malloc(msa->N * sizeof(int));
 
     while(fscanf(f, "%s", taxon_name) >= 0)
         for(i = 0; i < msa->num_seq; i++)
@@ -29,6 +36,27 @@ printf("%s %s\n", infile, outfile);
                 fprintf(p, ">%s\n%s\n", taxon_name, msa->msa[i]);
     fclose(f);
     fclose(p);
+
+    sprintf(taxon_name, "%s_tmp", outfile);
+    parse_input(&sub_msa, taxon_name);
+    f = fopen(outfile, "w");
+
+    for(i = 0; i < sub_msa.N; i++){
+        masked[i] = 1;
+        for(j = 0; j < sub_msa.num_seq; j++)
+            masked[i] = masked[i] && sub_msa.msa[j][i] == '-';
+    }
+
+    for(i = 0; i < sub_msa.num_seq; i++){
+        fprintf(f, ">%s\n", sub_msa.name[i]);
+        for(j = 0; j < sub_msa.N; j++)
+            if(!masked[j]) 
+                fprintf(f, "%c", sub_msa.msa[i][j]);
+        
+        if(i != sub_msa.num_seq - 1) 
+            fprintf(f, "\n");
+    }
+    fclose(f);
 
     return 0;
 }
@@ -67,6 +95,7 @@ int parse_input(msa_t * msa_ptr, char * filename){
         free(msa_core);
         PRINT_AND_RETURN("malloc for msa_name failed in parse_input",   MALLOC_ERROR);
     }
+
 
     // Clear strings    
     sequence_counter = 0;

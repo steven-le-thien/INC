@@ -21,11 +21,15 @@ typedef struct inc_grp{
 	int 		n_taxa;
 	int 		n_ctree;
 
+	char * 		mtree_name;
+
 	BT * 		gtree;
-	BT **		ctree;		// n_ctree-length array of constraint trees
+	BT * 		mtree;
+	BT **		ctree;		// n_ctree-length array of constraint tree
 	int * 		visited;	// n_taxa-lenght array of visted taxa in the building tree, this is in the master indexing scheme
 						
-	float ** 	d; // n_taxa by n_taxa array of distance matrix
+	float ** 	d; 			// n_taxa by n_taxa array of distance matrix
+	float ** 	dm; 		// n_taxa by n_taxa array of distance matrix on the FastTree
 } INC_GRP;
 
 typedef struct mapping{
@@ -77,6 +81,18 @@ typedef struct options{
     int tree_index;
     char ** tree_names ;
 } option_t;
+
+typedef struct ml_options{
+	char * input_alignment;		// currently only accepts path
+	char * output_prefix;		// currently only accepts path
+	char * init_tree_name;		// currently only accepts path 
+	char * init_d_name;			// currently only accepts path
+
+	int use_fasttree_to_build_constraint;
+	int use_raxmltree_to_build_constraint;
+	int max_subset_size;
+	char * distance_model; 
+} ml_options;
 
 
 typedef struct fp{
