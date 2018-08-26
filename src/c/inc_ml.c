@@ -82,7 +82,6 @@ int main(int argc, char ** argv){
         printf("checking for initial tree...\n");
         if(!master_ml_options.init_tree_name){
             sprintf(name, "%sfirst_tree.tree", master_ml_options.output_prefix);
-            // sprintf(name, "%sfirst_tree_init.tree", master_ml_options.output_prefix);
             master_ml_options.init_tree_name = name;
             
             f = fopen(name, "r");
@@ -90,15 +89,12 @@ int main(int argc, char ** argv){
                 tmp_options.input_name = master_ml_options.input_alignment;
                 tmp_options.tree_names = malloc(sizeof(char*));
                 tmp_options.tree_names[0] = master_ml_options.init_tree_name;
-                // tmp_options.tree_names[0] = malloc(10000);
-                // sprintf(tmp_options.tree_names[0], "%sinit", master_ml_options.init_tree_name);
                 if(fasttree_job(&tmp_options, &master_ml_options)           != SUCCESS)         PRINT_AND_EXIT("fasttree_job failed in main\n", GENERAL_ERROR);
                 // if(fasttree_initial_tree_job(&tmp_options, &master_ml_options)           != SUCCESS)         PRINT_AND_EXIT("fasttree_job failed in main\n", GENERAL_ERROR);
                 // if(make_raxml_constraint(master_ml_options.input_alignment, master_ml_options.init_tree_name, &master_ml_options) != SUCCESS) PRINT_AND_EXIT("raxml job failedi n main\n", GENERAL_ERROR);
             } else fclose(f);
             
         }
-        // return 0;
         // Making constraint trees 
         if(make_constraint_trees(&num_ctree) != SUCCESS)           PRINT_AND_EXIT("make constraint trees failed in main\n", GENERAL_ERROR);
     } else num_ctree = 0;
@@ -118,7 +114,7 @@ int main(int argc, char ** argv){
     }
 
     // Piping into constrained_inc code
-    constraint_inc(num_ctree, &master_ml_options);
+    if(constraint_inc(num_ctree, &master_ml_options) != SUCCESS)        PRINT_AND_EXIT("constraint_inc failed in main", GENERAL_ERROR);
     return 0; 
 }   
 
