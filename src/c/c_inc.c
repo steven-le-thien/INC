@@ -5,6 +5,7 @@
 #include <string.h>
 #include <math.h>
 
+#include "c_inc.h"
 #include "tree.h"
 #include "utilities.h"
 #include "options.h"
@@ -15,11 +16,11 @@
 
 int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst);
 
-int skip_counter = 0;
+// int skip_counter = 0;
 
 // Implementation of constrained version of the INC algorithm. 
 // Command line argument is as followed: constraint_inc -i <alignment file> -t <tree1> <tree2> ... 
-int main(int argc, char ** argv){
+int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
     // Meta variables
     option_t    options;
 
@@ -27,10 +28,11 @@ int main(int argc, char ** argv){
     MAP_GRP     map;
     MST_GRP     mst;
 
+    meta.master_ml_options = master_ml_options;
+
     // Parse options
     printf("reading in options...\n");
 
-    if(init_options(&options)               != SUCCESS)         PRINT_AND_EXIT("init_options failed in main\n", GENERAL_ERROR);
     if(read_cmd_arg(argc, argv, &options)   != SUCCESS)         PRINT_AND_EXIT("read_cmd_arg failed in main\n", GENERAL_ERROR);
 
     // Getting the distance matrix
@@ -52,6 +54,19 @@ int main(int argc, char ** argv){
     // Initialize growing tree using the first 3 taxa in the ordering
     printf("initializing the growing tree...\n");
     if(init_growing_tree(&meta, &map, &mst) != SUCCESS)         PRINT_AND_EXIT("init_growing_tree failed in main\n", GENERAL_ERROR);
+
+
+                                                                                            #if 1 
+    // int i, j;
+                                                                                                // for(i = 0; i < 500; i++){
+                                                                                                //     for(j = 0; j < 500; j++){
+                                                                                                //         printf("%f ", meta.dm[i][j]);
+                                                                                                //     }
+                                                                                                //     printf("\n");
+                                                                                                // }
+                                                                                                // printf("\n"); 
+                                                                                            #endif
+
 
     printf("building the tree...\n");
     // Loop through Prim's ordering

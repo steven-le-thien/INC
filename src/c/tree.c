@@ -7,6 +7,7 @@
 #include "tree.h"
 #include "utilities.h"
 #include "options.h"
+#include "tools.h"
 
 // Global variable for quickly intializing a tree
 BT_edge adj_list[MAXN][3];
@@ -37,22 +38,19 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
     int i;  // loop variable
 
     // Init meta's field
-#if use_induced_quartet
-    meta->n_ctree = options->num_trees - 1;
-    meta->mtree_name = options->tree_names[0];
-    meta->mtree = read_newick(NULL, meta->mtree_name, -1);
+    if(meta->master_ml_options->use_four_point_method_with_tree){
+        meta->n_ctree = options->num_trees - 1;
+        map->master_to_midx    = malloc(meta->n_taxa  * sizeof(int));
+        meta->dm = malloc(meta->n_taxa * sizeof(float*));
+        if(!meta->dm)           PRINT_AND_RETURN("malloc failed to construct dm in parse_tree\n", MALLOC_ERROR);
+        for(i = 0; i < meta->n_taxa; i++){
+            meta->dm[i] = malloc(meta->n_taxa * sizeof(float));
+        }
 
-    meta->dm = malloc(meta->n_taxa * sizeof(float*));
-    if(!meta->dm)           PRINT_AND_RETURN("malloc failed to construct dm in parse_tree\n", MALLOC_ERROR);
-    for(i = 0; i < meta->n_taxa; i++){
-        meta->dm[i] = malloc(meta->n_taxa * sizeof(float));
-    }
-
-    meta->dm = construct_unweighted_matrix()
-#else 
-    meta->n_ctree = options->num_trees;
-#endif
-
+        construct_unweighted_matrix_job(options->tree_names[0], options->output_name, meta->dm, map->master_to_name, map->master_to_midx);
+    } else 
+        meta->n_ctree = options->num_trees;
+ 
 
     // Malloc sequence
     meta->ctree             = malloc(meta->n_ctree * sizeof(BT *));
@@ -74,11 +72,11 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
 
     // Call the newick reader
     for(i = 0; i < meta->n_ctree; i++){
-#if use_induced_quartet
-        meta->ctree[i]      = read_newick(map, options->tree_names[i + 1], i);
-#else 
-        meta->ctree[i]      = read_newick(map, options->tree_names[i], i);
-#endif
+        printf("i is %d\n", i);
+        if(meta->master_ml_options->use_four_point_method_with_tree)
+            meta->ctree[i]      = read_newick(map, options->tree_names[i + 1], i);
+        else 
+            meta->ctree[i]      = read_newick(map, options->tree_names[i], i);
     }
 
                                                                                             #if DEBUG 

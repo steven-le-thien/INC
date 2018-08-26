@@ -4,30 +4,29 @@
 #define UTILITIES_H
 
 
-// Settings
 
 // Constraint trees settings
-#define use_constraint                          1
-#define recompute_constraint_trees              0
+// #define use_constraint                          1
+// #define recompute_constraint_trees              1
 
-#define use_subtree_for_constraint_trees        0
-#define use_raxml_for_constraint_trees          0
-#define use_fasttree_for_constraint_trees       0
+// #define use_subtree_for_constraint_trees        0
+// #define use_raxml_for_constraint_trees          0
+// #define use_fasttree_for_constraint_trees       1
 
-// Quartet method
-#define use_four_point_method                   1
-#define use_induced_quartet                     0
-#define use_induced_fasttree                    0
-#define use_ml_method                           0
-#define MAKE_TIME                               0
+// // Quartet method
+// #define use_four_point_method_with_distance     1
+// #define use_four_point_method_with_tree         0
+// #define use_new_quartet_raxml                   0
+// #define use_ml_method                           0
+// #define MAKE_TIME                               0
 
-// Distance setting
-#define DISTANCE_MODEL                          "logDet"
+// // Distance setting
+// #define DISTANCE_MODEL                          "logDet"
 
-// PASTA decomposition setting
-#define SS_THRESHOLD                            1000
+// // PASTA decomposition setting
+// #define SS_THRESHOLD                            50
 
-// Debug setting
+// // Debug setting
 #define DEBUG                                   0
 #define LARGE_DEBUG                             0
 #define DEBUG_REC                               0

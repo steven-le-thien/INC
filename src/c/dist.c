@@ -74,6 +74,7 @@ int read_phylip(INC_GRP * meta, MAP_GRP * map, char * filename){
     int i, j;   // loop counters
     float min;
 
+    printf("%s\n", filename);
     // Open file
     f = fopen(filename, "r");
     if(!f)                          PRINT_AND_RETURN("cannot open input file in parse_distance_matrix", OPEN_ERROR);
@@ -107,6 +108,7 @@ int read_phylip(INC_GRP * meta, MAP_GRP * map, char * filename){
             fscanf(f, "%f", &(meta->d[i][j]));
         }
     }
+    fclose(f);
 
     // Corrected 2kp (for 0 entries)
     min = 1.0 * INT_MAX; 

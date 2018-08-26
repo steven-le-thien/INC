@@ -222,10 +222,9 @@ int write_distance_matrix(float ** d, option_t * options, msa_t * msa){
 
     f = fopen(filename, "r");
     if(f){ // such file already exists, then we just skip and assume that we have the correct distance matrix
+        fclose(f);
         return 0;
     }
-
-    fclose(f);
 
     f = fopen(filename, "w");
     fprintf(f, "%d\n", msa->num_seq);
