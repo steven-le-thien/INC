@@ -345,9 +345,7 @@ int dfs_lca_implementation(int node, int parent, BT * tree, int * dp, int * in_b
     int child_dp; 
     int child_lca_parent;
     int child_lca_child;
-    int child_dfs_return;
     int flag;
-    int ret;
                                                                                             #if DEBUG && DEBUG_REC
                                                                                                 printf("debug: in recursion, node is %d(%d), parent is %d\n", node, tree->master_idx_map[node], parent); 
                                                                                             #endif
@@ -376,16 +374,14 @@ int dfs_lca_implementation(int node, int parent, BT * tree, int * dp, int * in_b
 
     // Initialization
     *dp = 0;
-    ret = -1;
     flag = 0;
     child_dp = -1;
     child_lca_parent    = -1;
     child_lca_child     = -1;
-    child_dfs_return    = -1;
 
     for(i = 0; i < tree->degree[node]; i++){
         if(tree->adj_list[node][i].dest == parent) continue;
-        child_dfs_return = dfs_lca_implementation(tree->adj_list[node][i].dest, node, tree, &child_dp, in_building, &child_lca_parent, &child_lca_child, mode);
+        dfs_lca_implementation(tree->adj_list[node][i].dest, node, tree, &child_dp, in_building, &child_lca_parent, &child_lca_child, mode);
                                                                                             
         if(child_dp){
             *dp += child_dp;
@@ -468,8 +464,6 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
     int i, j;
 
     // Quartet method
-    int parent_sample;
-    int child_sample[2];
     int child_idx_a[2];
     int child_counter;
     int up;
@@ -540,12 +534,11 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
                                                                                                  printf("\n");
                                                                                             #endif
         // Work on better logic for this part
-        for(i = 0; i < 3; i++){
-            if(tree->adj_list[cur_vertex][i].dest == parent_map[cur_vertex]){
+        for(i = 0; i < 3; i++)
+            if(tree->adj_list[cur_vertex][i].dest == parent_map[cur_vertex])
                 parent_idx = i;
-                parent_sample = tree->adj_list[cur_vertex][i].sample;
-            }
-        }
+            
+        
 
                                                                                             #if DEBUG 
                                                                                                  printf("deug: i shuld be snmall %d\n", tree->adj_list[cur_vertex][parent_idx].sample); 
@@ -554,7 +547,6 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
         for(i = 0; i < 3; i++)
             if(i != parent_idx){
                 child_idx_a[child_counter] = i; 
-                child_sample[child_counter] = tree->adj_list[cur_vertex][i].sample;
                 child_counter++;
 
 

@@ -48,8 +48,10 @@ int make_constraint_trees(int * num_ctree){
                 if(master_ml_options.use_subtree_for_constraint_trees){
                     if(make_subtree(in_name, out_name, master_ml_options.init_tree_name) != SUCCESS) PRINT_AND_RETURN("make subtree faield in main\n", GENERAL_ERROR);
                 } else {
+                    printf("before subsetting\n");
                     sprintf(msa_name, "%s_ctree%d.msa", master_ml_options.output_prefix, *num_ctree);
                     if(subset_msa(in_name, msa_name, &msa) != SUCCESS) PRINT_AND_RETURN("make subset msa failed in main\n", GENERAL_ERROR);
+                    printf("after subsetting\n");
 
                     if(master_ml_options.use_raxml_for_constraint_trees){
                         if(make_raxml_constraint(msa_name, out_name, &master_ml_options) != SUCCESS) PRINT_AND_RETURN("make raxml constraint failed in main\n", GENERAL_ERROR);
@@ -89,6 +91,8 @@ int main(int argc, char ** argv){
                 tmp_options.input_name = master_ml_options.input_alignment;
                 tmp_options.tree_names = malloc(sizeof(char*));
                 tmp_options.tree_names[0] = master_ml_options.init_tree_name;
+	
+
                 if(fasttree_job(&tmp_options, &master_ml_options)           != SUCCESS)         PRINT_AND_EXIT("fasttree_job failed in main\n", GENERAL_ERROR);
                 // if(fasttree_initial_tree_job(&tmp_options, &master_ml_options)           != SUCCESS)         PRINT_AND_EXIT("fasttree_job failed in main\n", GENERAL_ERROR);
                 // if(make_raxml_constraint(master_ml_options.input_alignment, master_ml_options.init_tree_name, &master_ml_options) != SUCCESS) PRINT_AND_EXIT("raxml job failedi n main\n", GENERAL_ERROR);

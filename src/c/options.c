@@ -69,17 +69,18 @@ int read_ml_cmd_arg(int argc, char ** argv, ml_options * ml_options){
  * Effect   set fields in option struct
  */
 int read_cmd_arg(int argc, char ** argv, option_t * options){
+    int i;
     if(init_options(options)               != SUCCESS)         PRINT_AND_RETURN("init_options failed in main\n", GENERAL_ERROR);
 
     if(!options) 
         PRINT_AND_RETURN("options is null in read_cmd_arg", GENERAL_ERROR);
 
     printf("argc is %d\n", argc);
-    for(int i  = 0; i < argc; i++){
+    for(i  = 0; i < argc; i++){
         printf("argv is %s\n", argv[i]);
     }
     // Loop through command
-    for(int i = 0; i < argc; i++)
+    for(i = 0; i < argc; i++)
         if(i != 0 && i % 2) //currently reading a flag
             if(find_arg_index(argv[i], argv[i + 1], options, &i, argc, argv) != SUCCESS)
                 PRINT_AND_RETURN("failed reading of the arguments", GENERAL_ERROR);

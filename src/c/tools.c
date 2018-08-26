@@ -384,9 +384,7 @@ int distance_matrix_job(option_t * options, ml_options * master_ml_options){
     char command[GENERAL_BUFFER_SIZE];
     char cwd[PATH_MAX];
 
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-       printf(stdout, "Current working dir: %s\n", cwd);
-    }
+    getcwd(cwd, sizeof(cwd));
 
     // This is too long
     sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%s/nexus; Quit;\" | %s -n;", options->input_name, PAUP_bin, cwd);

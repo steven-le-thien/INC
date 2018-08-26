@@ -66,19 +66,19 @@ int new_quartets_raxml(char * up, char * u1, char * u2, char * x, int * res, ml_
 		PRINT_AND_RETURN("tmp.quartet already exits in working directory\n", GENERAL_ERROR);
 	} 
 
-	tmp_options.output_name = NULL;
-	tmp_options.input_name = stock_msa_name;
-    tmp_options.tree_names = malloc(sizeof(char *));
-    tmp_options.tree_names[0] = stock_quartet_name;
-    if(raxml_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
+        tmp_options.output_name = NULL;
+        tmp_options.input_name = stock_msa_name;
+        tmp_options.tree_names = malloc(sizeof(char *));
+        tmp_options.tree_names[0] = stock_quartet_name;
+        if(raxml_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
     // if(fasttree_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
 
-    sprintf(sibling1, "RAxML_bestTree.%s", stock_quartet_name);
-    tmp_options.input_name = sibling1;
+        sprintf(sibling1, "RAxML_bestTree.%s", stock_quartet_name);
+        tmp_options.input_name = sibling1;
         // tmp_options.input_name = stock_quartet_name;
 
-    tmp_options.output_name = stock_quartet_name;
-    if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
+       tmp_options.output_name = stock_quartet_name;
+       if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
 
     // tmp_options.out
 
@@ -100,7 +100,7 @@ int new_quartets_raxml(char * up, char * u1, char * u2, char * x, int * res, ml_
  //    tmp_options.output_name = stock_quartet_name;
  //    if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
 
-    f = fopen("tmp.quartet", "r");  // the tree looks like ((A, B), (C, D));
+        f = fopen("tmp.quartet", "r");  // the tree looks like ((A, B), (C, D));
 	fscanf(f, "%s", sibling1);
 	fclose(f);
 	// printf("tree is %s\n", sibling1);
@@ -187,8 +187,8 @@ int ml_quartet(char * up, char * u1, char * u2, char * x, int * res, ml_options 
 
 	tmp_options.output_name = NULL;
 	tmp_options.input_name = stock_msa_name;
-    tmp_options.tree_names = malloc(sizeof(char *));
-    tmp_options.tree_names[0] = stock_quartet_name;
+        tmp_options.tree_names = malloc(sizeof(char *));
+        tmp_options.tree_names[0] = stock_quartet_name;
 
 	// parent 
 	sprintf(cq, "((%s,%s),(%s,%s));\n((%s,%s),(%s,%s));\n((%s,%s),(%s,%s));\n", up, x, u1, u2,  u1, x, up, u2,  u2, x, u1, up);
@@ -204,13 +204,13 @@ int ml_quartet(char * up, char * u1, char * u2, char * x, int * res, ml_options 
 
 	if(ll_p - ll_1 > -EPS && ll_p - ll_2 > -EPS){
 		*res = 0;
-		*M = 1.0 / (1.0 + exp(-ABS(ll_p - ll_1)) + exp(-ABS(ll_p - ll_2)));
+		*M = 1.0 / (1.0 + exp(1ll * (-ABS(ll_p - ll_1))) + exp(1ll * (-ABS(ll_p - ll_2))));
 	} else if (ll_1 - ll_p > -EPS && ll_1 - ll_2 > -EPS){
 		*res = 1;
-		*M = 1.0 / (1.0 + exp(-ABS(ll_1 - ll_p)) + exp(-ABS(ll_1 - ll_2)));
+		*M = 1.0 / (1.0 + exp(1ll * (-ABS(ll_1 - ll_p))) + exp(1ll * (-ABS(ll_1 - ll_2))));
 	} else {
 		*res = 2;
-		*M = 1.0 / (1.0 + exp(-ABS(ll_2 - ll_1)) + exp(-ABS(ll_2 - ll_p)));
+		*M = 1.0 / (1.0 + exp(1ll * (-ABS(ll_2 - ll_1))) + exp(1ll * (-ABS(ll_2 - ll_p))));
 	}
 	if(*M < 0.001) *M = 0.001;
 	*M = 1.0/(*M);

@@ -26,9 +26,7 @@ int read_phylip(INC_GRP * meta, MAP_GRP * map, char * filename);
 int parse_distance_matrix(INC_GRP * meta, MAP_GRP * map, option_t * options){
     FILE * f;
     char buf[1000050];
-    char command[10000];
     strclr(buf);
-    strclr(command);
 
     f = fopen(options->input_name, "r");
     if(!f)                          PRINT_AND_RETURN("cannot open input file in parse_distance_matrix", OPEN_ERROR);
