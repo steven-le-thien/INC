@@ -3,13 +3,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
+#include <unistd.h>
 
 #include "tools.h"
 #include "utilities.h"
 
-char RAxML_bin[] 	= "raxmlHPC-AVX2";
-char FastTree_bin[] 	= "FastTree"; 
-char PAUP_bin[] 	= "paup4a163_osx";
+char RAxML_bin[]    = "raxmlHPC-AVX2";
+char FastTree_bin[] = "FastTree"; 
+char PAUP_bin[]     = "paup4a163_osx";
 
 // Private functions
 void add_command(char * current_command, char * new_command);
@@ -270,7 +272,7 @@ int raxml_job(option_t * options,  ml_options * master_ml_options){
     char * jc_str = "GTRCAT -V --JC69";
 
     if(options->output_name){
-        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -p 1 > rubbish", 	RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name, options->output_name);
+        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -p 1 > rubbish",     RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name, options->output_name);
     }
     else{
         sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -p 1 > rubbish",    RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name);
@@ -374,9 +376,14 @@ int raxml_with_quartet_tree_job(option_t * options,  ml_options * master_ml_opti
 
 int distance_matrix_job(option_t * options, ml_options * master_ml_options){
     char command[GENERAL_BUFFER_SIZE];
+    char cwd[PATH_MAX];
+
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+       printf(stdout, "Current working dir: %s\n", cwd);
+    }
 
     // This is too long
-    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=nexus; Quit;\" | %s -n;", options->input_name, PAUP_bin);
+    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%s/nexus; Quit;\" | %s -n;", options->input_name, PAUP_bin, cwd);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
 
     sprintf(command, "echo \"exe nexus; DSet distance=%s; SaveDist format=RelPHYLIP file=%s triangle=both diagonal=yes; Quit;\" | %s -n", master_ml_options->distance_model, master_ml_options->init_d_name, PAUP_bin);
