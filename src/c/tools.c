@@ -365,7 +365,7 @@ int raxml_with_quartet_tree_job(option_t * options,  ml_options * master_ml_opti
     // printf("here\n");
     // printf("raxml was called as %s\n", command);
     // while(1);
-    if(system(command) != SUCCESS)          while(1);
+    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling raxml in raxml_with quartet tree\n", GENERAL_ERROR);
     // while(1);
     system("rm tmp.fast");
     return 0; 
@@ -376,10 +376,10 @@ int distance_matrix_job(option_t * options, ml_options * master_ml_options){
     char command[GENERAL_BUFFER_SIZE];
 
     // This is too long
-    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=~/nexus; Quit;\" | %s -n;", options->input_name, PAUP_bin);
+    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=nexus; Quit;\" | %s -n;", options->input_name, PAUP_bin);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
 
-    sprintf(command, "echo \"exe ~/nexus; DSet distance=%s; SaveDist format=RelPHYLIP file=%s triangle=both diagonal=yes; Quit;\" | %s -n", master_ml_options->distance_model, master_ml_options->init_d_name, PAUP_bin);
+    sprintf(command, "echo \"exe nexus; DSet distance=%s; SaveDist format=RelPHYLIP file=%s triangle=both diagonal=yes; Quit;\" | %s -n", master_ml_options->distance_model, master_ml_options->init_d_name, PAUP_bin);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
     return 0;
 }
