@@ -7,6 +7,10 @@
 #include "tools.h"
 #include "utilities.h"
 
+char RAxML_bin[] 	= "raxmlHPC-AVX2";
+char FastTree_bin[] 	= "FastTree"; 
+char PAUP_bin[] 	= "paup4a163_osx";
+
 // Private functions
 void add_command(char * current_command, char * new_command);
 int find_prefix_and_dir_from_path(char * path, char * prefix, char * dir);
@@ -194,7 +198,7 @@ int fasttree_job(option_t * options,  ml_options * master_ml_options){
     char command[GENERAL_BUFFER_SIZE];
     char * gtrgamma_str = "-gtr -gamma";
     char * jc_str = " ";
-    sprintf(command, "FastTree -nt %s -quiet < %s > %s",  strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->input_name, options->tree_names[0]);
+    sprintf(command, "%s -nt %s -quiet < %s > %s", FastTree_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->input_name, options->tree_names[0]);
     printf("fasttree was called as %s\n", command);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling fasttree_job\n", GENERAL_ERROR);
     return 0;
@@ -206,7 +210,7 @@ int fasttree_initial_tree_job(option_t * options,  ml_options * master_ml_option
     char command[100 * GENERAL_BUFFER_SIZE];
     char * gtrgamma_str = "-gtr -gamma";
     char * jc_str = " ";
-    sprintf(command, "FastTree -nt %s -quiet -noml -nni 0 -log tmp.log < %s",  strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->input_name);
+    sprintf(command, "%s -nt %s -quiet -noml -nni 0 -log tmp.log < %s", FastTree_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->input_name);
     printf("fasttree was called as %s\n", command);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling fasttree_job\n", GENERAL_ERROR);
 
@@ -266,13 +270,13 @@ int raxml_job(option_t * options,  ml_options * master_ml_options){
     char * jc_str = "GTRCAT -V --JC69";
 
     if(options->output_name){
-        sprintf(command, "raxmlHPC-AVX2 -T 12 --silent -m %s -j -n %s -s %s -w %s -p 1 > rubbish", strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name, options->output_name);
+        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -p 1 > rubbish", 	RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name, options->output_name);
     }
     else{
-        sprintf(command, "raxmlHPC-AVX2 -T 12 --silent -m %s -j -n %s -s %s -p 1 > rubbish",       strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name);
+        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -p 1 > rubbish",    RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name);
     }
     
-    printf("raxml was called as %s\n", command);
+    //printf("raxml was called as %s\n", command);
     // while(1);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling raxml job\n", GENERAL_ERROR);
     return 0; 
@@ -293,14 +297,14 @@ int raxml_with_initial_tree_job(option_t * options,  ml_options * master_ml_opti
     if(fasttree_initial_tree_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("fast fasttre job gfailed in raxml job with initial tree\n", GENERAL_ERROR);
 
     if(options->output_name){
-        sprintf(command, "raxmlHPC-AVX2 -T 12 --silent -m %s -j -n %s -s %s -w %s -t tmp.fast -p 1 > rubbish", strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name, options->output_name);
+        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -t tmp.fast -p 1 > rubbish", RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name, options->output_name);
     }
     else{
-        sprintf(command, "raxmlHPC-AVX2 -T 12 --silent -m %s -j -n %s -s %s -t tmp.fast -p 1 > rubbish",       strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name);
+        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -t tmp.fast -p 1 > rubbish",       RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name);
     }
     
-    printf("raxml was called as %s\n", command);
-    // while(1);
+    //printf("raxml was called as %s\n", command);
+    //while(1);
     system(command);// != SUCCESS)          PRINT_AND_RETURN("error in calling raxml job\n", GENERAL_ERROR);
     system("rm tmp.fast");
     return 0; 
@@ -353,10 +357,10 @@ int raxml_with_quartet_tree_job(option_t * options,  ml_options * master_ml_opti
     fclose(f);
 
     if(options->output_name){
-        sprintf(command, "raxmlHPC-AVX2 -T 12 --silent -m %s -j -n %s -s %s -w %s -f N -z tmp.fast -e 0.0001 -p 1 > rubbish", strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name, options->output_name);
+        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -f N -z tmp.fast -e 0.0001 -p 1 > rubbish", RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name, options->output_name);
     }
     else{
-        sprintf(command, "raxmlHPC-AVX2 -T 12 --silent -m %s -j -n %s -s %s -f N -z tmp.fast -e 0.0001 -p 1 > rubbish",       strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name);
+        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -f N -z tmp.fast -e 0.0001 -p 1 > rubbish",       RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name);
     }
     // printf("here\n");
     // printf("raxml was called as %s\n", command);
@@ -372,10 +376,10 @@ int distance_matrix_job(option_t * options, ml_options * master_ml_options){
     char command[GENERAL_BUFFER_SIZE];
 
     // This is too long
-    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=~/nexus; Quit;\" | paup4a163_osx -n;", options->input_name);
+    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=~/nexus; Quit;\" | %s -n;", options->input_name, PAUP_bin);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
 
-    sprintf(command, "echo \"exe ~/nexus; DSet distance=%s; SaveDist format=RelPHYLIP file=%s triangle=both diagonal=yes; Quit;\" | paup4a163_osx -n", master_ml_options->distance_model, master_ml_options->init_d_name);
+    sprintf(command, "echo \"exe ~/nexus; DSet distance=%s; SaveDist format=RelPHYLIP file=%s triangle=both diagonal=yes; Quit;\" | %s -n", master_ml_options->distance_model, master_ml_options->init_d_name, PAUP_bin);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
     return 0;
 }
