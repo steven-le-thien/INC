@@ -9,9 +9,15 @@
 #include "tools.h"
 #include "utilities.h"
 
+#if 1
 char RAxML_bin[]    = "raxmlHPC-AVX2";
 char FastTree_bin[] = "FastTree"; 
 char PAUP_bin[]     = "paup4a163_osx";
+#else
+char RAxML_bin[]    = "raxmlHPC-PTHREADS-AVX2";
+char FastTree_bin[] = "FastTree";
+char PAUP_bin[]     = "paup4a163_centos64";
+#endif
 
 // Private functions
 void add_command(char * current_command, char * new_command);

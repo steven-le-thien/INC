@@ -1,7 +1,7 @@
 
 ml: inc_ml.o c_inc.o dist.o prim.o options.o tools.o tree.o traversal.o msa.o quartet.o
 	gcc -Wall inc_ml.o c_inc.o dist.o prim.o options.o tools.o tree.o traversal.o msa.o quartet.o -o ml
-	gcc -Wall c_inc.o dist.o prim.o options.o tools.o tree.o traversal.o msa.o quartet.o -o constraint_inc
+	gcc -Wall constraint_incinc.o dist.o prim.o options.o tools.o tree.o traversal.o msa.o quartet.o -o constraint_inc
 
 c_inc.o: c_inc.c tree.h utilities.h options.h tools.h dist.h prim.h c_inc.h
 	gcc -Wall -c c_inc.c tree.h options.h tools.h dist.h prim.h traversal.h c_inc.h utilities.h 
