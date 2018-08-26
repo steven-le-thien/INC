@@ -387,7 +387,7 @@ int distance_matrix_job(option_t * options, ml_options * master_ml_options){
     getcwd(cwd, sizeof(cwd));
 
     // This is too long
-    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%s/nexus; Quit;\" | %s -n;", options->input_name, PAUP_bin, cwd);
+    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%s/nexus; Quit;\" | %s -n;", options->input_name, cwd, PAUP_bin);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
 
     sprintf(command, "echo \"exe nexus; DSet distance=%s; SaveDist format=RelPHYLIP file=%s triangle=both diagonal=yes; Quit;\" | %s -n", master_ml_options->distance_model, master_ml_options->init_d_name, PAUP_bin);
