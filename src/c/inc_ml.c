@@ -28,6 +28,7 @@ int make_constraint_trees(int * num_ctree){
         printf("performing PASTA decomposition\n");
         if(make_subset_label(master_ml_options.init_tree_name, master_ml_options.output_prefix, &master_ml_options) != SUCCESS)        PRINT_AND_RETURN("make_subset_label failed in main\n", GENERAL_ERROR); 
         if(!(master_ml_options.use_subtree_for_constraint_trees)){
+         printf("%s\n", master_ml_options.input_alignment);
             parse_input(&msa, master_ml_options.input_alignment);
         }
     }

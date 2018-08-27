@@ -69,7 +69,6 @@ int make_subset_label(char * tree_name, char * out_name, ml_options * master_ml_
     tmp_options.input_name = tree_name;
     tmp_options.output_name = out_name;
     if(subset_job(&tmp_options, master_ml_options)                 != SUCCESS)         PRINT_AND_RETURN("subset job failed in main\n", GENERAL_ERROR);
-
     return 0;
 }
 
