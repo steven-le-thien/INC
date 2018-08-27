@@ -74,7 +74,6 @@ int parse_input(msa_t * msa_ptr, char * filename){
     char** msa_name;
 
     int i; //loop variable
-
     // Input FASTA file
     FILE * f;
 
@@ -82,7 +81,6 @@ int parse_input(msa_t * msa_ptr, char * filename){
     int sequence_counter;
     char line[MAX_SEQUENCE_LENGTH];
     char seq[MAX_SEQUENCE_LENGTH];
-
     // Safe checking
     if(!msa_ptr)    PRINT_AND_RETURN("msa_ptr is NULL in parse input",          GENERAL_ERROR);
     if(!filename)   PRINT_AND_RETURN("filename is NULL in parse input",         GENERAL_ERROR);
@@ -96,7 +94,6 @@ int parse_input(msa_t * msa_ptr, char * filename){
         PRINT_AND_RETURN("malloc for msa_name failed in parse_input",   MALLOC_ERROR);
     }
 
-
     // Clear strings    
     sequence_counter = 0;
     strclr(seq);
@@ -105,19 +102,16 @@ int parse_input(msa_t * msa_ptr, char * filename){
     // Redirecting stdin
     f = freopen(filename, "r", stdin);
     if(!f) PRINT_AND_RETURN("fail to open input file",  OPEN_ERROR);    
-
     // Ignoring comments
     while(1){
         if(scanf("%s", line) < 0) PRINT_AND_RETURN("input file contains no sequence",   GENERAL_ERROR);
         if(str_start_with(line, '>')) break; 
     }
-
     // Set up name for the first sequence
     if(setup_name(&msa_name[sequence_counter], &line[1]) != SUCCESS){ //roll back and deallocate
         free(msa_core);
         free(msa_name);
     }
-
     // Read the stdin line by line until EOF signal
     while(scanf("%s", line) >= 0){
         switch(*line){ //read the first character of the word
@@ -149,7 +143,6 @@ int parse_input(msa_t * msa_ptr, char * filename){
                 strcat(seq, line);
         }
     }
-
     // Final iteration for the last sequence
     if(setup_sequence(&msa_core[sequence_counter], seq) != SUCCESS){ // roll back and deallocate
         for(i = 0; i < sequence_counter; i++){

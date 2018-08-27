@@ -28,7 +28,6 @@ int make_constraint_trees(int * num_ctree){
         printf("performing PASTA decomposition\n");
         if(make_subset_label(master_ml_options.init_tree_name, master_ml_options.output_prefix, &master_ml_options) != SUCCESS)        PRINT_AND_RETURN("make_subset_label failed in main\n", GENERAL_ERROR); 
         if(!(master_ml_options.use_subtree_for_constraint_trees)){
-         printf("%s\n", master_ml_options.input_alignment);
             parse_input(&msa, master_ml_options.input_alignment);
         }
     }
@@ -43,16 +42,14 @@ int make_constraint_trees(int * num_ctree){
         if(!f && !p)
             break;
         else {
-            fclose(f);
-            fclose(p);
+            if(f) fclose(f);
+            if(p) fclose(p);
             if(master_ml_options.recompute_constraint_trees){
                 if(master_ml_options.use_subtree_for_constraint_trees){
                     if(make_subtree(in_name, out_name, master_ml_options.init_tree_name) != SUCCESS) PRINT_AND_RETURN("make subtree faield in main\n", GENERAL_ERROR);
                 } else {
-                    printf("before subsetting\n");
                     sprintf(msa_name, "%s_ctree%d.msa", master_ml_options.output_prefix, *num_ctree);
                     if(subset_msa(in_name, msa_name, &msa) != SUCCESS) PRINT_AND_RETURN("make subset msa failed in main\n", GENERAL_ERROR);
-                    printf("after subsetting\n");
 
                     if(master_ml_options.use_raxml_for_constraint_trees){
                         if(make_raxml_constraint(msa_name, out_name, &master_ml_options) != SUCCESS) PRINT_AND_RETURN("make raxml constraint failed in main\n", GENERAL_ERROR);
@@ -62,6 +59,7 @@ int make_constraint_trees(int * num_ctree){
                 }
             }
             (*num_ctree)++;
+
         }
     }
 
