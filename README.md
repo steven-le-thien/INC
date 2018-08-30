@@ -28,7 +28,8 @@ constraint_inc -i <input_distance_matrix> -o <output_prefix> -t <constraint_tree
 The command for INC-ML is 
 ```
 ml -i <input_alignment> -o <output_prefix> -t <initial_tree> -r <recompute_constraint_trees> 
-   -d <distance_type> -n <approx_constraint_tree_size> -c <constraint_tree_method> -q <quartet_method> -g <guide_tree>
+   -d <distance_type> -n <approx_constraint_tree_size> -c <constraint_tree_method> 
+   -q <quartet_method> -g <guide_tree>
 ```
 Only the `-t` flag to INC-ML is optional. Read the options field for details of other flags as well as their default values. 
 
@@ -45,7 +46,7 @@ When running `ml`, also make sure that all the dependencies (PASTA, FastTree2, N
 6. `-d` accepts either `logDet` or `K2P` or `JC` or `P`, which are the different distance models. This field must be set.
 7. `-n` accepts a positive number that approximates the constraint tree size. This field must be set. Recommended values is `min(number_of_sequences / 4, 1000)`. 
 8. `-q` accepts either `fpm` or `subtree` or `raxml` or `ml`. `fpm` specifies that Four Point Method on the input distance matrix is used to compute quartet trees. `raxml` specifies that RAxML is evoked on 4 sequences to compute the quartet tree. `ml` specifies that RAxML is evoked on 4 sequences to compute the quartet tree, then change the weighting of the quartet trees to `likelihood_of_best_tree / likelihood_of_second_best_tree`. When `subtree` is used, a 'guide tree' must be specified with `-g`. The code then uses the induced quartet on the guide tree to compute the constraint trees. Weighting still uses the distance matrix. Default: `fpm`
-9. Voting protocol. Work is being done to have a flag for voting protocol. For the time being, 
+9. Voting protocol. Work is being done to have a flag for voting protocol. For the time being, go to line 287 of `traversal.c`. There should be a single number on that line. Use `0` if you want `0-1` voting. Use `1` if you want to weight the vote by `1/diam`. Use `2` if you want to weight the vote by `1/diam^2`. Default: `2`. There are also options to use another voting round, just uncomment the next function call and change the voting scheme accordingly. 
 
 ## Format
 1. The input distance matrix in `constraint_inc` is in PHYLIP format. 
@@ -53,4 +54,7 @@ When running `ml`, also make sure that all the dependencies (PASTA, FastTree2, N
 3. The input alignment for `ml` is in PASTA.
 
 ## License and Copyright
-See the attached LICENSE and COPYRIGHT file for details. Note that some part of the program (build_subsets_from_tree.py) was distributed under a different license
+See the attached LICENSE and COPYRIGHT file for details. Note that some part of the program (scripts in the tools folder) was distributed under a different license
+
+## Contact
+The package is under constant development. Contact `thienle2@illinois.edu` for implementation questions/suggestions for the C code. Contact `raaronsy@berkeley.edu` for implementation questions/suggestions for the python code.
