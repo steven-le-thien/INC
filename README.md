@@ -54,7 +54,8 @@ When running `ml`, also make sure that all the dependencies (PASTA, FastTree2, N
 3. All constraint trees, at `<output_prefix>ctree<number>.tree`, where `number` counts from `0` until `number_of_constraint_trees - 1`.
 4. All cosntraint trees label, at `<output_prefix>ctree<number>.lab`, where `number` counts from `0` until `number_of_constraint_trees - 1`.
 5. All cosntraint trees msa, at `<output_prefix>ctree<number>.msa`, where `number` counts from `0` until `number_of_constraint_trees - 1`.
-6. Distance matrix input to INC at `<output_prefix>c_inc_input`. 
+6. Distance matrix input to INC at `<output_prefix>c_inc_input`.
+7. If you use `subtree` for `-c`, a secondary matrix used to quickly compute induced quartets on the guide tree is generate at `<output_prefix>secondary_matrix`. 
 
 ## Format
 1. The input distance matrix in `constraint_inc` is in PHYLIP format. 
