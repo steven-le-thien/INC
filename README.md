@@ -66,4 +66,4 @@ When running `ml`, also make sure that all the dependencies (PASTA, FastTree2, N
 See the attached LICENSE and COPYRIGHT file for details. Note that some part of the program (scripts in the tools folder) was distributed under a different license
 
 ## Contact
-The package is under constant development. Contact `thienle2@illinois.edu` for implementation questions/suggestions for the C code. Contact `raaronsy@berkeley.edu` for implementation questions/suggestions for the python code.
+The package is under constant development. Contact `thienle2@illinois.edu` for implementation questions/suggestions for the C code. 
