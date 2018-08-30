@@ -16,6 +16,7 @@ If you want to use the maximum likelihood extension of constraint INC then the f
 2. FastTree2 (http://www.microbesonline.org/fasttree/FastTree.c)
 3. Newick Utils (https://github.com/tjunier/newick_utils)
 4. Extra scripts in the tools folder
+5. RAxML (only if needed to run RAxML)
 
 ## Installation
 Run `make` to generate the binaries `constraint_inc` and `ml`, used for the constraint INC and its ML extension respectively. The command for constraint INC is 
@@ -27,13 +28,24 @@ constraint_inc -i <input_distance_matrix> -o <output_prefix> -t <constraint_tree
 The command for INC-ML is 
 ```
 ml -i <input_alignment> -o <output_prefix> -t <initial_tree> -r <recompute_constraint_trees> 
-  -d <distance_type> -n <approx_constraint_tree_size> -c <constraint_tree_method> -q <quartet_method>
+   -d <distance_type> -n <approx_constraint_tree_size> -c <constraint_tree_method> -q <quartet_method> -g <guide_tree>
 ```
-Only the `-t` flag to INC-ML is optional. 
+Only the `-t` flag to INC-ML is optional. Read the options field for details of other flags as well as their default values. 
 
 If you want to call `constraint_inc` or `ml` from any directory, make sure they are on your PATH variable (if you are using UNIX-based machine) or equivalent. 
 
 When running `ml`, also make sure that all the dependencies (PASTA, FastTree2, Newick Utils, extra scripts) are also on your PATH variable. 
+
+## Options
+1. `-i` specifies input alignment. Please specify the full path.
+2. `-o` specifies output tree. Please specify the full path. Any file with the same name will be overwritten.
+3. `-t` specifies a starting tree for PASTA decomposition. Please specifies the full path. If no `-t` flag is detected, the code will generate a FastTree2 tree as `<output_prefix>first_tree.tree` in the current directory.
+4. `-c` accepts either `no` or `subtree` or `fasttree` or `raxml`. `no` specifies that ML-INC is run without constraint trees (or all constraint trees are singletons). `subtree` specifies that the induced subtree of the initial tree is used as constraint trees. `fasttree` specifies that FastTree2 is run on subalignments to generate the constraint trees. `raxml` specifies that `raxml` is run on subalignments to generate the cosntraint trees. Default: `fasttree`.
+5. `-r` accepts either `0` or `1`. If this flag is set to `0` (default), the constraint trees will be constructed and the code will look for `<output_prefix>ctree<number>.tree` in the current directory and parse them as constraint trees. If this flag is set to `1`, the method specified in `-c` (or the default method) is used to compute the constraint trees. Default: 1. 
+6. `-d` accepts either `logDet` or `K2P` or `JC` or `P`, which are the different distance models. This field must be set.
+7. `-n` accepts a positive number that approximates the constraint tree size. This field must be set. Recommended values is `min(number_of_sequences / 4, 1000)`. 
+8. `-q` accepts either `fpm` or `subtree` or `raxml` or `ml`. `fpm` specifies that Four Point Method on the input distance matrix is used to compute quartet trees. `raxml` specifies that RAxML is evoked on 4 sequences to compute the quartet tree. `ml` specifies that RAxML is evoked on 4 sequences to compute the quartet tree, then change the weighting of the quartet trees to `likelihood_of_best_tree / likelihood_of_second_best_tree`. When `subtree` is used, a 'guide tree' must be specified with `-g`. The code then uses the induced quartet on the guide tree to compute the constraint trees. Weighting still uses the distance matrix. Default: `fpm`
+9. Voting protocol. Work is being done to have a flag for voting protocol. For the time being, 
 
 ## Format
 1. The input distance matrix in `constraint_inc` is in PHYLIP format. 
