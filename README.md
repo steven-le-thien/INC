@@ -31,7 +31,7 @@ ml -i <input_alignment> -o <output_prefix> -t <initial_tree> -r <recompute_const
    -d <distance_type> -n <approx_constraint_tree_size> -c <constraint_tree_method> 
    -q <quartet_method> -g <guide_tree>
 ```
-The `-t`, `-c`, `-r`, `-g` and `-q` flags to INC-ML is optional, whereas the `-d` and `-n` flags must always be entered. Read the Options field for details of other flags as well as their default values. 
+The `-t`, `-c`, `-r`, `-g` and `-q` flags to INC-ML is optional, whereas the `-i`, `-o`, `-d` and `-n` flags must always be entered. Read the Options field for details of other flags as well as their default values. 
 
 If you want to call `constraint_inc` or `ml` from any directory, make sure they are on your PATH variable (if you are using UNIX-based machine) or equivalent. 
 
