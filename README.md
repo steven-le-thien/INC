@@ -37,7 +37,7 @@ If you want to call `constraint_inc` or `ml` from any directory, make sure they 
 
 When running `ml`, also make sure that all the dependencies (PASTA, FastTree2, Newick Utils, extra scripts) are also on your PATH variable. 
 
-## Options
+## INC_ML options
 1. `-i` specifies input alignment. Please specify the full path.
 2. `-o` specifies output tree. Please specify the full path. Any file with the same name will be overwritten.
 3. `-t` specifies a starting tree for PASTA decomposition. Please specifies the full path. If no `-t` flag is detected, the code will generate a FastTree2 tree as `<output_prefix>first_tree.tree` in the current directory.
@@ -47,6 +47,14 @@ When running `ml`, also make sure that all the dependencies (PASTA, FastTree2, N
 7. `-n` accepts a positive number that approximates the constraint tree size. This field must be set. Recommended values is `min(number_of_sequences / 4, 1000)`. 
 8. `-q` accepts either `fpm` or `subtree` or `raxml` or `ml`. `fpm` specifies that Four Point Method on the input distance matrix is used to compute quartet trees. `raxml` specifies that RAxML is evoked on 4 sequences to compute the quartet tree. `ml` specifies that RAxML is evoked on 4 sequences to compute the quartet tree, then change the weighting of the quartet trees to `likelihood_of_best_tree / likelihood_of_second_best_tree`. When `subtree` is used, a 'guide tree' must be specified with `-g`. The code then uses the induced quartet on the guide tree to compute the constraint trees. Weighting still uses the distance matrix. __Default__: `fpm`
 9. Voting protocol. Work is being done to have a flag for voting protocol. For the time being, go to line 287 of `traversal.c`. There should be a single number on that line. Use `0` if you want `0-1` voting. Use `1` if you want to weight the vote by `1/diam`. Use `2` if you want to weight the vote by `1/diam^2`. __Default__: `2`. There are also options to use another voting round, just uncomment the next function call and change the voting scheme accordingly. 
+
+## INC_ML outputs
+1. The final tree, as specified in `-o`. 
+2. The initial tree, at `<output_prefix>first_tree.tree`.
+3. All constraint trees, at `<output_prefix>ctree<number>.tree`, where `number` counts from `0` until `number_of_constraint_trees - 1`.
+4. All cosntraint trees label, at `<output_prefix>ctree<number>.lab`, where `number` counts from `0` until `number_of_constraint_trees - 1`.
+5. All cosntraint trees msa, at `<output_prefix>ctree<number>.msa`, where `number` counts from `0` until `number_of_constraint_trees - 1`.
+6. Distance matrix input to INC at `<output_prefix>c_inc_input`. 
 
 ## Format
 1. The input distance matrix in `constraint_inc` is in PHYLIP format. 
