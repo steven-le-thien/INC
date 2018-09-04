@@ -13,4 +13,5 @@ $(OBJ)/%.o: $(OBJECTS)
 
 clean:
 	rm $(SRC)/*.o 
+	rm $(SRC)/*.d
 	rm ml
