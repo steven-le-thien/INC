@@ -9,7 +9,7 @@
 #include "tools.h"
 #include "utilities.h"
 
-#if 0
+#if 1
 char RAxML_bin[]    = "raxmlHPC-AVX2";
 char FastTree_bin[] = "FastTree"; 
 char PAUP_bin[]     = "paup4a163_osx";

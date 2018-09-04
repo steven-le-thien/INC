@@ -585,12 +585,10 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
                                                 // printf("using use_four_point_method_with_distance\n");
 
                 four_point_method(d, mapping[up], mapping[u[0]], mapping[u[1]], x, &quartet_result);
-                M = MAX(MAX(MAX(MAX(MAX(d[mapping[up]][mapping[u[0]]], d[mapping[up]][mapping[u[1]]]), d[mapping[up]][x]), d[mapping[1]][mapping[u[0]]]), d[mapping[1]][x]), d[x][mapping[u[0]]]);
             }
             else if (master_ml_options->use_four_point_method_with_tree){
                                 // printf("using use_four_point_method_with_tree\n");
                 four_point_method(secondary_distance, master_to_midx[mapping[up]], master_to_midx[mapping[u[0]]], master_to_midx[mapping[u[1]]], master_to_midx[x], &quartet_result);
-                 M = MAX(MAX(MAX(MAX(MAX(secondary_distance[mapping[up]][mapping[u[0]]], secondary_distance[mapping[up]][mapping[u[1]]]), secondary_distance[mapping[up]][x]), secondary_distance[mapping[1]][mapping[u[0]]]), secondary_distance[mapping[1]][x]), secondary_distance[x][mapping[u[0]]]);
             }
             else if (master_ml_options->use_new_quartet_raxml){
                 new_quartets_raxml(name_map[mapping[up]], name_map[mapping[u[0]]], name_map[mapping[u[1]]], name_map[x], &quartet_result, master_ml_options);
