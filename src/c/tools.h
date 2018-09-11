@@ -25,4 +25,5 @@ extern int make_subtree(char * label, char * outname, char * tree_name);
 extern int make_fasttree_constraint(char * msa_name, char * out_name, ml_options * master_ml_options);
 extern int make_raxml_constraint(char * msa_name, char * out_name, ml_options * master_ml_options); 
 extern int construct_unweighted_matrix_job(char * filename, char * output_prefix, float ** dm, char ** name_map, int * master_to_midx);
+extern int make_constraint_trees_from_disjoint_subsets(int n, msa_t * msa,  int ** disjoint_subset, ml_options * master_ml_options);
 #endif

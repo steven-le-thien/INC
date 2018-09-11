@@ -10,6 +10,9 @@ typedef struct ml_options{
 	char * init_d_name;			// currently only accepts path
 	char * guide_tree_name; 	// currently only accepts path
 
+	// Use distance matrix 
+	int use_distance_matrix;
+
 	// Constraint trees settings
 	int use_constraint;
 	int recompute_constraint_trees;
@@ -38,6 +41,7 @@ typedef struct m{ // this is an adjacency list edge, meaning that it is directed
 	int 	dest; 			// destination 
 	int 	master_idx;		// indexing into the vote array (only for the voting), it maybe possible to remove this field
 	int 	sample; 		// leaf sample at the destination
+	double 	weight;
 } BT_edge;
 
 typedef struct tree{
@@ -47,6 +51,19 @@ typedef struct tree{
 	int * master_idx_map;			// n_node indexing from the constrained tree's scheme to the master scheme, this is not a surjection
 } BT;
 
+// Whole graphs 
+typedef struct list{
+	int 		dest;
+	struct list * 	next;
+} ADJ_LIST;
+
+typedef struct graph{
+	int n;
+	ADJ_LIST ** last_node; // O(1) insertion
+	ADJ_LIST ** adjacency_list;
+} GRAPH;
+
+// Groups
 typedef struct inc_grp{
 	int 		n_taxa;
 	int 		n_ctree;
@@ -113,15 +130,24 @@ typedef struct options{
     char ** tree_names ;
 } option_t;
 
+typedef struct heap_node{
+    int key;
+    int value;
+} heap_node;
 
+typedef struct min_heap{
+    int size;
+    int capacity;
+    int * pos;
+    heap_node ** heap;
+} min_heap;
 
-typedef struct fp{
-    char * output_format;
-    char * output_name;
-    char * input_format;
-    char * input_name;
-    char * stdout;
-} fp_options;
+typedef struct msa {
+    int     N;          // size of one sequence
+    int     num_seq;    // number of sequences
+    char**  msa;
+    char**  name;
+} msa_t;
 
 extern int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options);
 

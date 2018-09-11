@@ -5,18 +5,7 @@
 
 #include "c_inc.h"
 
-typedef struct heap_node{
-    int key;
-    int value;
-} heap_node;
-
-typedef struct min_heap{
-    int size;
-    int capacity;
-    int * pos;
-    heap_node ** heap;
-} min_heap;
-
 extern int prim(INC_GRP * meta, MST_GRP * mst);
+extern int prim_on_small_graph(int n, GRAPH * graph, MST_GRP * mst, char * distance_model, char ** data);
 
 #endif

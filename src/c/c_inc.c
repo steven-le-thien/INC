@@ -5,6 +5,7 @@
 #include <string.h>
 #include <math.h>
 
+#include "msa.h"
 #include "c_inc.h"
 #include "tree.h"
 #include "utilities.h"
@@ -13,8 +14,10 @@
 #include "dist.h"
 #include "prim.h"
 #include "traversal.h"
+#include "fast_mst.h"
 
 #define COMPILE_ALONE 0
+#define SEED 12345
 
 int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst);
 
@@ -30,6 +33,10 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
     MAP_GRP     map;
     MST_GRP     mst;
 
+    // No distance matrix tmp variables
+    msa_t msa;
+    int ** disjoint_subset = NULL; 
+
     meta.master_ml_options = master_ml_options;
 
     // Parse options
@@ -37,22 +44,37 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
 
     if(read_cmd_arg(argc, argv, &options)   != SUCCESS)         PRINT_AND_EXIT("read_cmd_arg failed in main\n", GENERAL_ERROR);
 
-    // Getting the distance matrix
-    printf("parsing initial matrix and tree...\n");
-    if(parse_distance_matrix(&meta, &map, &options) 
-                                            != SUCCESS)         PRINT_AND_EXIT("parse_distance_matrix failed in main\n", GENERAL_ERROR);
+    if(meta.master_ml_options->use_distance_matrix){
+        // Getting the distance matrix
+        printf("parsing initial matrix and tree...\n");
+        if(parse_distance_matrix(&meta, &map, &options) 
+                                                != SUCCESS)         PRINT_AND_EXIT("parse_distance_matrix failed in main\n", GENERAL_ERROR);
 
-    // At this stage, all tree names should be in options->tree_name. It should be ok to parse them all at once since together they have at most 4M nodes
-    if(parse_tree(&meta, &map, &options)    != SUCCESS)         PRINT_AND_EXIT("parse tree failed in main\n", GENERAL_ERROR);
+        // Compute the MST 
+        printf("computing the mst...\n");
+        if(prim(&meta, &mst)                    != SUCCESS)         PRINT_AND_EXIT("prim algorithm failed in main\n", GENERAL_ERROR);
+    } else {    
+        printf("without distance matrix...\n");
+        if(parse_input(&msa, meta.master_ml_options->input_alignment)
+                                                != SUCCESS)         PRINT_AND_EXIT("read data failed in main\n", GENERAL_ERROR);
 
-    // Compute the MST 
-    printf("computing the mst...\n");
-    if(prim(&meta, &mst)                    != SUCCESS)         PRINT_AND_EXIT("prim algorithm failed in main\n", GENERAL_ERROR);
+        if(fast_mst(msa.msa, meta.n_taxa, meta.master_ml_options->distance_model, SEED, &mst, disjoint_subset)
+                                                != SUCCESS)         PRINT_AND_EXIT("fast_mst failed in main\n", GENERAL_ERROR); 
+
+        if(make_constraint_trees_from_disjoint_subsets(meta.n_taxa, &msa, disjoint_subset, meta.master_ml_options) 
+                                                != SUCCESS)         PRINT_AND_EXIT("make_constraint_trees_from_disjont_subsets failed\n", GENERAL_ERROR);
+    }
+    
                                                                                                 // printf("debug: the following print out prim's ctree\n");
 
                                                                                                 // for(int i = 0; i < meta.n_taxa; i++)
                                                                                                 //     printf("%d ", map.master_to_ctree[mst.prim_ord[i]]);
                                                                                                 // printf("\n");
+
+    // At this stage, all tree names should be in options->tree_name. It should be ok to parse them all at once since together they have at most 4M nodes
+    if(parse_tree(&meta, &map, &options)    != SUCCESS)         PRINT_AND_EXIT("parse tree failed in main\n", GENERAL_ERROR);
+
+    
     // Initialize growing tree using the first 3 taxa in the ordering
     printf("initializing the growing tree...\n");
     if(init_growing_tree(&meta, &map, &mst) != SUCCESS)         PRINT_AND_EXIT("init_growing_tree failed in main\n", GENERAL_ERROR);

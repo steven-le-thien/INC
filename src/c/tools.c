@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <math.h>
 #include <unistd.h>
 
 #include "tools.h"
@@ -22,6 +23,34 @@ char PAUP_bin[]     = "paup4a163_centos64";
 // Private functions
 void add_command(char * current_command, char * new_command);
 int find_prefix_and_dir_from_path(char * path, char * prefix, char * dir);
+
+int make_constraint_trees_from_disjoint_subsets(int n, msa_t * msa,  int ** disjoint_subset, ml_options * master_ml_options){
+    int i, j;
+    FILE * f;
+    char msa_name[GENERAL_BUFFER_SIZE];
+    char out_name[GENERAL_BUFFER_SIZE];
+    int sqrt_n = (int) sqrt(1.0 * n);
+
+    for(i = 0; i < sqrt_n; i++){
+        // Write the subset msa to a file 
+        sprintf(out_name, "%s_ctree%d.tree", master_ml_options->output_prefix, i);
+        sprintf(msa_name, "%s_ctree%d.msa", master_ml_options->output_prefix, i);
+        f = fopen(msa_name, "w");
+        for(j = 0; j < n; j++)
+            if(disjoint_subset[j][i])
+                fprintf(f, ">%s\n>%s\n", msa->name[j], msa->msa[j]);
+        fclose(f); 
+
+        // Call fasttree or raxml on the msa
+        if(master_ml_options->use_raxml_for_constraint_trees){
+            if(make_raxml_constraint(msa_name, out_name, master_ml_options) != SUCCESS) PRINT_AND_RETURN("make raxml constraint failed in main\n", GENERAL_ERROR);
+        } else if (master_ml_options->use_fasttree_for_constraint_trees){
+            if(make_fasttree_constraint(msa_name, out_name, master_ml_options) != SUCCESS) PRINT_AND_RETURN("make fasttree constraint failed in main \n", GENERAL_ERROR);
+        }
+    }
+
+    return 0;
+}
 
 int construct_unweighted_matrix_job(char * filename, char * output_prefix, float ** dm, char ** name_map, int * master_to_midx){
     option_t tmp_options;
@@ -152,8 +181,10 @@ int constraint_inc(int argc, ml_options * master_ml_options){
     
     if(master_ml_options->use_four_point_method_with_tree){
         sprintf(command, "constraint_inc -i %s -o %s -t %s", master_ml_options->init_d_name, master_ml_options->output_prefix, master_ml_options->guide_tree_name);
-    } else {
+    } else if (master_ml_options->use_constraint && argc > 0) {
         sprintf(command, "constraint_inc -i %s -o %s -t", master_ml_options->init_d_name, master_ml_options->output_prefix);
+    } else {
+        sprintf(command, "constraint_inc -i %s -o %s", master_ml_options->init_d_name, master_ml_options->output_prefix);
     }
 
     for(i = 0; i < argc; i++){
@@ -163,6 +194,7 @@ int constraint_inc(int argc, ml_options * master_ml_options){
 
     printf("constraint_inc called with\n%s\n", command);
 
+    // Put commands into argv
     j = 0;
     len = 0;
     read_mode = 1;

@@ -300,6 +300,9 @@ int init_ml_options(ml_options * ml_options){
     ml_options->output_prefix           = NULL;
     ml_options->init_tree_name          = NULL;
     ml_options->init_d_name             = NULL;
+    ml_options->guide_tree_name         = NULL; 
+
+    ml_options->use_distance_matrix                 = 1;
 
     ml_options->use_constraint                      = 1;
     ml_options->recompute_constraint_trees          = 1;

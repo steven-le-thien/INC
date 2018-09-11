@@ -63,6 +63,8 @@
 #define EPS                                     1e-7              
 #define POWER(a, b)                             ((b) == 0 ? 1 : ((b) == 1 ? (a) : ((b) == 2 ? (a) * (a) : ((b) == 3 ? (a) * (a) * (a) : ((b) == 4 ? (a) * (a) * (a) * (a) : -1)))))
 #define ABS(a)                                  ((a) > 0 ? (a) : -(a))
+#define LOG2(a)                                 (log(a) / log(2))
+
 
 // Options util
 #define RECIP_WEIGHT                            1 
