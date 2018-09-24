@@ -149,6 +149,35 @@ typedef struct msa {
     char**  name;
 } msa_t;
 
+typedef struct rmq{
+    // Statistics
+    int         n;
+    int         num_blk;
+    int         num_exhaust;
+    int         blk_sz;
+
+    // Arrays and mappings
+    int         * a;
+    int         * blk_idx_to_config;
+
+    // Tables
+    int         ** sparse_table;        // num_blk x log2(num_blk) array, where A[i][j] is the index of the block with the smallest value from the jth block to the j + 2^i block
+    int         *** exhaustive_table;   // config_num x blk_sz x blk_sz array where A[i][j][k] is the relative index of the smallest value from the jth position to the kth position for the ith configuration
+} RMQ_T;
+
+typedef struct lca_t{
+	// LCA stuff
+	int 	* euler_tour;
+	int 	* level;
+	int 	* first_occurence;
+	int 	* visited;
+	BT 		* tree;
+	RMQ_T 	* RMQ;
+
+	// Smallest distance stuff
+	double 	* d_from_root;
+} LCA_T;
+
 extern int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options);
 
 #endif

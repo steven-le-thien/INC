@@ -27,6 +27,7 @@ int find_prefix_and_dir_from_path(char * path, char * prefix, char * dir);
 int make_constraint_trees_from_disjoint_subsets(int n, msa_t * msa,  int ** disjoint_subset, ml_options * master_ml_options){
     int i, j;
     FILE * f;
+    printf("here\n");
     char msa_name[GENERAL_BUFFER_SIZE];
     char out_name[GENERAL_BUFFER_SIZE];
     int sqrt_n = (int) sqrt(1.0 * n);
@@ -36,9 +37,10 @@ int make_constraint_trees_from_disjoint_subsets(int n, msa_t * msa,  int ** disj
         sprintf(out_name, "%s_ctree%d.tree", master_ml_options->output_prefix, i);
         sprintf(msa_name, "%s_ctree%d.msa", master_ml_options->output_prefix, i);
         f = fopen(msa_name, "w");
+        // printf("%d\n", disjoint_subset[0][0]);
         for(j = 0; j < n; j++)
             if(disjoint_subset[j][i])
-                fprintf(f, ">%s\n>%s\n", msa->name[j], msa->msa[j]);
+                fprintf(f, ">%s\n%s\n", msa->name[j], msa->msa[j]);
         fclose(f); 
 
         // Call fasttree or raxml on the msa
@@ -184,7 +186,7 @@ int constraint_inc(int argc, ml_options * master_ml_options){
     } else if (master_ml_options->use_constraint && argc > 0) {
         sprintf(command, "constraint_inc -i %s -o %s -t", master_ml_options->init_d_name, master_ml_options->output_prefix);
     } else {
-        sprintf(command, "constraint_inc -i %s -o %s", master_ml_options->init_d_name, master_ml_options->output_prefix);
+        sprintf(command, "constraint_inc -o %s", master_ml_options->output_prefix);
     }
 
     for(i = 0; i < argc; i++){

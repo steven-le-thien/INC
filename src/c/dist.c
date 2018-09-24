@@ -186,8 +186,11 @@ int matrixCharMatches (char **s, int numSeqs, int length, char c, int *filter)
     int i;
     int matches = 0;
 
-    for (i=0; i<numSeqs; i++)
+    for (i=0; i<numSeqs; i++){
+        // printf("i is %d, %s, %d, %d, %d\n", i, s[i], numSeqs, length, filter[0]);
         matches += seqCharMatches (s[i], length, c, filter);
+    }
+    // printf("wda\n");
 
     return (matches);
 }
@@ -215,13 +218,15 @@ int *nextPerm (int *p, int index, int size, int length)
         return (nextPerm (p, index, size-1, length));
 }
 
-double permDiagProduct (double **P, int *p, int d)
+double permDiagProduct (double P[4][4], int *p, int d)
 {
     int i;
     double prod = 1.0;
 
-    for (i=0; i<d; i++)
+    for (i=0; i<d; i++){
+        // printf("%d %d %d %lf\n", i, p[i], d, P[0][0]);
         prod = prod * P[i][p[i]];
+    }
 
     return (prod);
 }
@@ -230,7 +235,7 @@ int *initPerm (int size)
 {
     int *p;
     int i;
-
+    // printf("%d\n", size);
     p = (int *) malloc (size * sizeof (int));
 
     for (i=0; i<size; i++)
@@ -240,7 +245,7 @@ int *initPerm (int size)
 }
 
 
-double det (double **P, int d)
+double det (double P[4][4], int d)
 {
     int *p;
     int signum = 1;
@@ -252,6 +257,7 @@ double det (double **P, int d)
 
     for (i=0; i<numPerms; i++)
     {
+        // printf("%d\n", i);
         det += signum * permDiagProduct (P, p, d);
         p = nextPerm (p, i+1, d-1, d);
         signum = -1 * signum;
@@ -262,29 +268,32 @@ double det (double **P, int d)
     return(det);
 }
 
-int count_selected(int * gapFilterWarn, int numSites, char ** data){ 
+int count_selected(int ** gapFilterWarn, int numSites, char ** data){ 
     int count = 0;
     int i, j;
 
-    gapFilterWarn = (int *) malloc(numSites * sizeof (int));
+    *gapFilterWarn = (int *) malloc(numSites * sizeof (int));
     for (i=0; i<numSites; i++)
-        gapFilterWarn[i] = 1;
-    
-    for (i=0; i<numSites; i++)
-        for (j=0; j<2; j++)
-            if (('*' == data[j][i]) || ('?' == data[j][i]) ||
-                    ('-' == data[j][i]))
-                gapFilterWarn[i] = 0;
+        (*gapFilterWarn)[i] = 1;
+                // printf("ưdaw %d\n", numSites);
 
     for (i=0; i<numSites; i++)
-        if (gapFilterWarn[i])
+        for (j=0; j<2; j++){
+            // printf("%s\n", data[j]);
+            if (('*' == data[j][i]) || ('?' == data[j][i]) ||
+                    ('-' == data[j][i]))
+                (*gapFilterWarn)[i] = 0;
+        }
+
+    for (i=0; i<numSites; i++)
+        if ((*gapFilterWarn)[i])
             count++;
     return count;
 }
 
 double compute_logdet_distance (char ** data, int numSites){
     int i, j;
-    int *gapFilterWarn = NULL;
+    int * gapFilterWarn;
     int count; 
 
     int alphabetSize = 4;
@@ -293,24 +302,28 @@ double compute_logdet_distance (char ** data, int numSites){
     double Pi2[2][alphabetSize];
     double P[alphabetSize][alphabetSize];
     double D, detP;
-    
-    count = count_selected(gapFilterWarn, numSites, data);
-        
+
+    count = count_selected(&gapFilterWarn, numSites, data);
+    // printf("dwa%s %s %d\n", data[0], data[1], gapFilterWarn[0]);
+
     for (i=0; i<2; i++)
         for (j=0; j<alphabetSize; j++)
             Pi2[i][j] = (double) (matrixCharMatches (&data[i], 1, numSites,
                 alphabet[i], gapFilterWarn)) / (1.0 * count);
-
     for (i=0; i<alphabetSize; i++)
         for (j=0; j<alphabetSize; j++)
             P[i][j] = (double) (countStateChanges (data[0], data[1], numSites,
                 alphabet[i], alphabet[j], gapFilterWarn)) / (double) count;
 
-    detP = det((double **) P, alphabetSize);
+                // printf("%lf %lf %lf %lf\n", P[3][0], P[3][1], P[3][2], P[3][3]);
 
-    if (0 >= detP)
+    detP = det(P, alphabetSize);
+
+    if (0 >= detP){
+        printf("WARNING\n");
         return -2; // saturated 
-
+    }
+// printf("here\n");
     D = -0.5 * log(detP);
 
     for (i=0; i<alphabetSize; i++)
@@ -323,12 +336,12 @@ double compute_logdet_distance (char ** data, int numSites){
 
 double compute_jc_distance (char ** data, int numSites){
     int i;
-    int *gapFilterWarn = NULL;
+    int *gapFilterWarn;
     int count; 
 
     double b = 0.0;
     
-    count = count_selected(gapFilterWarn, numSites, data);
+    count = count_selected(&gapFilterWarn, numSites, data);
     
     for (i=0; i<numSites; i++)
         if (data[0][i] != data[0][i])

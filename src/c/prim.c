@@ -204,7 +204,7 @@ int prim_on_small_graph(int n, GRAPH * graph, MST_GRP * mst, char * distance_mod
 
     // Prim's MST
     while(heap->size){
-
+        printf("we\n");
         head = pop_heap(heap);
         if(!head)                   PRINT_AND_RETURN("heap popping failed in prim\n", GENERAL_ERROR);
         cur_key = head->key;

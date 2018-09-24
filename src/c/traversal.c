@@ -8,6 +8,7 @@
 #include "utilities.h"
 #include "options.h"
 #include "quartet.h"
+#include "fast_lca.h"
 
 int skip_counter =0;
 
@@ -572,7 +573,7 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
                                                                                                             #endif
 
 
-        M = MAX(MAX(MAX(MAX(MAX(d[mapping[up]][mapping[u[0]]], d[mapping[up]][mapping[u[1]]]), d[mapping[up]][x]), d[mapping[1]][mapping[u[0]]]), d[mapping[1]][x]), d[x][mapping[u[0]]]); 
+        
 
         for(i = 0; i < 2; i++) // base case, invalid vote
             vote[tree->adj_list[cur_vertex][child_idx_a[i]].master_idx] = vote[tree->adj_list[cur_vertex][parent_idx].master_idx];
@@ -583,17 +584,25 @@ int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid
             // Do quartet method here
             if(master_ml_options->use_four_point_method_with_distance){
                                                 // printf("using use_four_point_method_with_distance\n");
-
+                M = MAX(MAX(MAX(MAX(MAX(d[mapping[up]][mapping[u[0]]], d[mapping[up]][mapping[u[1]]]), d[mapping[up]][x]), d[mapping[1]][mapping[u[0]]]), d[mapping[1]][x]), d[x][mapping[u[0]]]); 
                 four_point_method(d, mapping[up], mapping[u[0]], mapping[u[1]], x, &quartet_result);
             }
             else if (master_ml_options->use_four_point_method_with_tree){
                                 // printf("using use_four_point_method_with_tree\n");
-                four_point_method(secondary_distance, master_to_midx[mapping[up]], master_to_midx[mapping[u[0]]], master_to_midx[mapping[u[1]]], master_to_midx[x], &quartet_result);
+                if(master_ml_options->use_distance_matrix){
+                    M = MAX(MAX(MAX(MAX(MAX(d[mapping[up]][mapping[u[0]]], d[mapping[up]][mapping[u[1]]]), d[mapping[up]][x]), d[mapping[1]][mapping[u[0]]]), d[mapping[1]][x]), d[x][mapping[u[0]]]); 
+                    four_point_method(secondary_distance, master_to_midx[mapping[up]], master_to_midx[mapping[u[0]]], master_to_midx[mapping[u[1]]], master_to_midx[x], &quartet_result);
+                } else {
+                    // fpm_on_tree(master_ml_options->LCA, int p, int u1, int u2, int x, int * ret, double * weight)
+                }
+
             }
             else if (master_ml_options->use_new_quartet_raxml){
+                M = MAX(MAX(MAX(MAX(MAX(d[mapping[up]][mapping[u[0]]], d[mapping[up]][mapping[u[1]]]), d[mapping[up]][x]), d[mapping[1]][mapping[u[0]]]), d[mapping[1]][x]), d[x][mapping[u[0]]]); 
                 new_quartets_raxml(name_map[mapping[up]], name_map[mapping[u[0]]], name_map[mapping[u[1]]], name_map[x], &quartet_result, master_ml_options);
             }
             else if (master_ml_options->use_ml_method){
+                M = MAX(MAX(MAX(MAX(MAX(d[mapping[up]][mapping[u[0]]], d[mapping[up]][mapping[u[1]]]), d[mapping[up]][x]), d[mapping[1]][mapping[u[0]]]), d[mapping[1]][x]), d[x][mapping[u[0]]]); 
                 ml_quartet(name_map[mapping[up]], name_map[mapping[u[0]]], name_map[mapping[u[1]]], name_map[x], &quartet_result, master_ml_options, &M, &revote_power);
                 // printf("using ml_method\n");
             }

@@ -41,13 +41,19 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
     if(meta->master_ml_options->use_four_point_method_with_tree){
         meta->n_ctree = options->num_trees - 1;
         map->master_to_midx    = malloc(meta->n_taxa  * sizeof(int));
-        meta->dm = malloc(meta->n_taxa * sizeof(float*));
-        if(!meta->dm)           PRINT_AND_RETURN("malloc failed to construct dm in parse_tree\n", MALLOC_ERROR);
-        for(i = 0; i < meta->n_taxa; i++){
-            meta->dm[i] = malloc(meta->n_taxa * sizeof(float));
-        }
 
-        construct_unweighted_matrix_job(options->tree_names[0], options->output_name, meta->dm, map->master_to_name, map->master_to_midx);
+        if(meta->master_ml_options->use_distance_matrix){
+            meta->dm = malloc(meta->n_taxa * sizeof(float*));
+            if(!meta->dm)           PRINT_AND_RETURN("malloc failed to construct dm in parse_tree\n", MALLOC_ERROR);
+            for(i = 0; i < meta->n_taxa; i++){
+                meta->dm[i] = malloc(meta->n_taxa * sizeof(float));
+            }
+
+            construct_unweighted_matrix_job(options->tree_names[0], options->output_name, meta->dm, map->master_to_name, map->master_to_midx);
+        } else {
+            
+        }
+        
     } else 
         meta->n_ctree = options->num_trees;
  
