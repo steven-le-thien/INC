@@ -151,10 +151,10 @@ int distance_matrix_job(option_t * options){
     char command[GENERAL_BUFFER_SIZE];
 
     // This is too long
-    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=~/nexus; Quit;\" | paup4a163_osx -n;", options->input_name);
+    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=~/nexus; Quit;\" | paup4a163_ubuntu64 -n;", options->input_name);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
 
-    sprintf(command, "echo \"exe ~/nexus; DSet distance=%s; SaveDist format=RelPHYLIP file=%sc_inc_input triangle=both diagonal=yes; Quit;\" | paup4a163_osx -n", distance_model, options->output_name);
+    sprintf(command, "echo \"exe ~/nexus; DSet distance=%s; SaveDist format=RelPHYLIP file=%sc_inc_input triangle=both diagonal=yes; Quit;\" | paup4a163_ubuntu64 -n", distance_model, options->output_name);
     if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
     return 0;
 }

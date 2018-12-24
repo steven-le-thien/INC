@@ -1,28 +1,8 @@
 # import ete3
 import dendropy
 
-def query(x, node, D):
-    """
-        A generic query function. Given a leaf X to insert while querying internal node NODE,
-        return the neighbor node X should belong in.
-    """
-    [(n1,l1),(n2,l2),(n3,l3)] = node.leaf_samples.items()
-    v1 = D(x,l1) + D(l2, l3)
-    v2 = D(x,l2) + D(l1, l3)
-    v3 = D(x,l3) + D(l1, l2)
-    best_v, best_n = min([(v1,n1),(v2,n2),(v3,n3)], key=lambda x:x[0])
-    return best_n
-
-
 class PNode(object):
     """ A generic container class with pointers to other PNodes """
-    
-    """ Plan: instead have self.edges_nodes, mapping PEdge objects to PNode objects
-        PEdge objects will store weight, both nodes, and have a bipartitions_dict
-            the bipartitions_dict maps a unique ID for each constraint tree
-            to the bipartition this edge currently represents for leaves in that constraint tree
-        
-    """
     
     def __init__(self, val=None):
         # maps neighbor Nodes to float weight values
@@ -31,11 +11,23 @@ class PNode(object):
         self.leaf_samples = dict()
         # a value for this particular node
         self.val = val
+
+        self.valid_node = True
     def __str__(self):
         if self.is_leaf():
             return "{0}".format(self.get_val())
         else:
             return "Internal {0}".format(repr(self))
+
+    # Metacontainer, https://stackoverflow.com/questions/6486387/implement-list-like-index-access-in-python
+    # can add attributes arbitrarily
+    def __delitem__(self, key):
+        self.__delattr__(key)
+    def __getitem__(self, key):
+        return self.__getattribute__(key)
+    def __setitem__(self, key, value):
+        self.__setattr__(key, value)
+
     def get_val(self):
         return self.val
     
@@ -54,7 +46,7 @@ class PNode(object):
         # single direction only
         del self.edge_weights[neighbor] 
     
-    def add_neighbor(self, neighbor, weight):
+    def add_neighbor(self, neighbor, weight=1):
         # single direction only
         self.edge_weights[neighbor] = weight
     
@@ -117,12 +109,14 @@ class PNode(object):
                 # self is leaf, neighbor is internal.
                 # use the closest one of neighbor's leaf samples
                 l1,l2 = neighbor.leaf_samples_not_for(self)
-                internal.leaf_samples[neighbor] = min(l1,l2, key=lambda x:D(x,leaf))
+                internal.leaf_samples[neighbor] = min(l1,l2, 
+                                                key=lambda x:D(x.get_val(),leaf.get_val()))
         else:
             if neighbor.is_leaf():
                 internal.leaf_samples[neighbor] = neighbor
                 l1,l2 = self.leaf_samples_not_for(neighbor)
-                internal.leaf_samples[self] = min(l1,l2,key=lambda x:D(x,leaf))
+                internal.leaf_samples[self] = min(l1,l2,
+                                                key=lambda x:D(x.get_val(),leaf.get_val()))
             else:
                 # both internal nodes, just use their samples
                 internal.leaf_samples[self] = neighbor.leaf_samples[self]
@@ -141,12 +135,7 @@ class PNode(object):
             if len(neighbor.leaf_samples) != 3:
                 print(neighbor.leaf_samples)
                 raise RuntimeError()
-        
-        if len(internal.leaf_samples) != 3:
-            print(internal.leaf_samples)
-            raise RuntimeError()
-            
-    
+
     def make_newick_string(self):
         """ Return the newick string associated with this tree. 
             
@@ -211,12 +200,14 @@ class PTree(object):
     def __init__(self, search_fn):
         self.leaves = set()
         self.root = None # an arbitrary root node. for now just the first leaf inserted
-        self.search_fn = search_fn # function(start_leaf,insert_leaf, D) that returns edge to break (v1,v2)
+        self.search_fn = search_fn # function(insert_leaf, D, **kwargs) that returns edge to break (v1,v2)
     def num_leaves(self):
         return len(self.leaves)
     def get_leaves(self):
         return self.leaves
     def make_newick_string(self):
+        if not self.root:
+            return "();"
         return self.root.make_newick_string()
     
     # def make_ete_tree(self):
@@ -235,12 +226,13 @@ class PTree(object):
     def set_root(self, new_root):
         self.root = new_root
     
-    def insert_leaf(self, leaf, D,start_leaf =None):
+    def insert_leaf(self, leaf, D,**kwargs):
         """
             insert LEAF into this tree, using distance function D(i,j)
             use self.SEARCH_FN(start,insert,D) to find the edge to break
             then break that edge, computing the new edges' distances
         """
+        leaf_name = leaf.get_val()
         # add leaf to list of leaves
         self.leaves.add(leaf)
         
@@ -250,17 +242,17 @@ class PTree(object):
         
         # case: second leaf added to tree - just have them be neighbors
         elif self.num_leaves() == 2:
-            self.get_root().add_neighbor(leaf, D(leaf,self.get_root()))
-            leaf.add_neighbor(self.get_root(), D(leaf,self.get_root()))
+            self.get_root().add_neighbor(leaf, D(leaf.get_val(),self.get_root().get_val()))
+            leaf.add_neighbor(self.get_root(), D(leaf.get_val(),self.get_root().get_val()))
         
         # case: third leaf - have a single internal node
         elif self.num_leaves() == 3:
             root = self.get_root()
             neighbor = root.get_neighbors()[0]
             # A,B,C are root(leaf), neighbor(leaf), new_leaf
-            AB = D(root, neighbor)
-            BC = D(neighbor, leaf)
-            AC = D(root, leaf)
+            AB = D(root.get_val(), neighbor.get_val())
+            BC = D(neighbor.get_val(), leaf.get_val())
+            AC = D(root.get_val(), leaf.get_val())
             close_wt = (AC + AB - BC)/2
             far_wt = (AB + BC - AC)/2
             leaf_wt = (AC + BC - AB)/2
@@ -269,23 +261,21 @@ class PTree(object):
         # case: 4+th leaf - figure out which edge to break from search_fn and break it
         else:
             # find the new edge to break
-            if not start_leaf:
-                start_leaf = self.get_root()
-            [v1,v2] = self.search_fn(start_leaf,leaf,D)
+            [v1,v2] = self.search_fn(leaf,D, **kwargs)
             
             # case 1: edge to break is internal
             if not v1.is_leaf() and not v2.is_leaf():
                 # (A1,B1),(C2,D2) are leaf samples for v1, v2 respectively
-                v1_other_neighbors = set(v1.get_neighbors()) - set([v2])
-                v2_other_neighbors = set(v2.get_neighbors()) - set([v1])
-
                 [A1,B1] = v1.leaf_samples_not_for(v2)
                 [C2,D2] = v2.leaf_samples_not_for(v1) 
 
+                A_name, B_name = A1.get_val(), B1.get_val()
+                C_name, D_name = C2.get_val(), D2.get_val()
+
                 #p is close weight, q is far weight, r is leaf weight
-                r = (D(A1,leaf) + D(C2,leaf) - D(A1,C2))/2
-                p = (D(A1,leaf) + D(B1,leaf) - D(A1,B1))/2 - r
-                q = (D(leaf,C2) + D(leaf,D2) - D(C2,D2))/2 - r
+                r = (D(A_name,leaf_name) + D(C_name,leaf_name) - D(A_name,C_name))/2
+                p = (D(A_name,leaf_name) + D(B_name,leaf_name) - D(A_name,B_name))/2 - r
+                q = (D(leaf_name,C_name) + D(leaf_name,D_name) - D(C_name,D_name))/2 - r
                 v1.add_leaf(v2, leaf, p, q, r,D)
             
             # case 2 - edge to break is not internal
@@ -295,15 +285,20 @@ class PTree(object):
                 A = [v2,v1][v1.is_leaf()]
                 other = [v1,v2][v1.is_leaf()]
                 [B,C] = other.leaf_samples_not_for(A)
+
+                A_name, B_name, C_name = A.get_val(), B.get_val(), C.get_val()
+
                 #p is close weight, q is far weight, r is leaf weight
                 # variables i_j represent the algebraic quantity "i+j"
-                r_q = (D(B,leaf) + D(C,leaf) - D(B,C))/2
-                p_r = D(A,leaf)
-                p_q = (D(A,B) + D(A,C) - D(B,C))/2
+                r_q = (D(B_name,leaf_name) + D(C_name,leaf_name) - D(B_name,C_name))/2
+                p_r = D(A_name,leaf_name)
+                p_q = (D(A_name,B_name) + D(A_name,C_name) - D(B_name,C_name))/2
                 
                 p = (p_r - r_q + p_q)/2
                 r = p_r - p
                 q = p_q - p
                 A.add_leaf(other, leaf, p,q,r,D)
                 
+        if "print_tree" in kwargs and kwargs["print_tree"]:
+            print(self.make_newick_string())
 

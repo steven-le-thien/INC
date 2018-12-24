@@ -39,3 +39,27 @@ When running `ml`, also make sure that all the dependencies (PASTA, FastTree2, N
 
 ## License and Copyright
 See the attached LICENSE and COPYRIGHT file for details. Note that some part of the program (build_subsets_from_tree.py) was distributed under a different license
+
+### Python Implementation
+
+INC and INC_NJ have also been implemented in `python3` and the implementation is available in the `src/python` folder.
+
+## Instructions
+Python INC was developed and tested using `conda` environments.
+There are three dependencies
+```
+conda install -c bioconda dendropy
+conda install -c anaconda scikit-bio
+conda install -c anaconda numpy
+```
+
+The command to convert an alignment (FASTA) to PHYLIP distance matrix is
+```
+python msa.py --in-fasta <fasta_path> --out <phylip_path> --os <ubuntu_or_osx>
+```
+'logDet' is the default metric. This tool depends on the (provided) paup* binary, so be sure to run the command from the `src/python` directory.
+
+The command to create newick trees from a PHYLIP file, using INC and/or INC_NJ is
+```
+python inc.py --in-phylip <phylip_path> --out <newick_path> [--inc] [--inc-nj]
+```
