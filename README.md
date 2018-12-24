@@ -63,3 +63,4 @@ The command to create newick trees from a PHYLIP file, using INC and/or INC_NJ i
 ```
 python inc.py --in-phylip <phylip_path> --out <newick_path> [--inc] [--inc-nj]
 ```
+Consult the `commands.sh` file for examples.
