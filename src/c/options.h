@@ -7,7 +7,6 @@
 
 // Functions
 extern int read_cmd_arg(int argc,char ** argv, option_t * options);
-extern int init_options(option_t * options);
-extern void destroy_options(option_t * options);
+extern int read_ml_cmd_arg(int argc,char ** argv, ml_options * options);
 
 #endif

@@ -4,30 +4,6 @@
 #define UTILITIES_H
 
 
-// Settings
-
-// Constraint trees settings
-#define use_constraint                          1
-#define recompute_constraint_trees              0
-
-#define use_subtree_for_constraint_trees        0
-#define use_raxml_for_constraint_trees          0
-#define use_fasttree_for_constraint_trees       0
-
-// Quartet method
-#define use_four_point_method                   1
-#define use_induced_quartet                     0
-#define use_induced_fasttree                    0
-#define use_ml_method                           0
-#define MAKE_TIME                               0
-
-// Distance setting
-#define DISTANCE_MODEL                          "logDet"
-
-// PASTA decomposition setting
-#define SS_THRESHOLD                            1000
-
-// Debug setting
 #define DEBUG                                   0
 #define LARGE_DEBUG                             0
 #define DEBUG_REC                               0
@@ -79,22 +55,20 @@
 #define MAX(a, b)                               ((a) > (b) ? (a) : (b))
 #define MIN(a, b)                               ((a) < (b) ? (a) : (b))
 
+#ifndef INT_MAX
 #define INT_MAX                                 10000000
+#endif 
+
 #define LN2                                     1.4426950408
 #define EPS                                     1e-7              
 #define POWER(a, b)                             ((b) == 0 ? 1 : ((b) == 1 ? (a) : ((b) == 2 ? (a) * (a) : ((b) == 3 ? (a) * (a) * (a) : ((b) == 4 ? (a) * (a) * (a) * (a) : -1)))))
 #define ABS(a)                                  ((a) > 0 ? (a) : -(a))
+#define LOG2(a)                                 (log(a) / log(2))
+
 
 // Options util
 #define RECIP_WEIGHT                            1 
 #define SQUARE_RECIP_WEIGHT                     2
 
-// // Malloc utils
-// #define SAFE_MALLOC_CALL(ptr, size)             do{\
-//                                                     ptr = malloc(size);
-//                                                     if(!ptr){
-
-//                                                     }
-                                                // } while(0)                          
 
 #endif

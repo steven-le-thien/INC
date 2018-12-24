@@ -7,6 +7,7 @@
 #include "prim.h"
 #include "utilities.h"
 #include "options.h"
+#include "dist.h"
 
 // Helper macro (for this file only)
 #define root_idx            0
@@ -151,6 +152,84 @@ int prim(INC_GRP * meta, MST_GRP * mst){
                                                                                                 else printf("failed test with flag %d\n", dflag);
                                                                                                 // while(1);
                                                                                             #endif
+    return 0;
+}
+
+int prim_on_small_graph(int n, GRAPH * graph, MST_GRP * mst, char * distance_model, char ** data){
+    // Heap variables
+    min_heap * heap;
+    heap_node * head;
+
+    char * tmp_dist_data[2];
+
+    // Loop variables
+    int i; 
+    int prim_ordering_counter;
+    int cur_key;
+
+    ADJ_LIST * cur_edge;
+    double cur_dist;
+    double sto_dist;
+    int num_site = strlen(data[0]);
+
+    // Temporary stack array
+    float v_arr[n];
+
+    // Mst initialization
+    mst->n_taxa             = n; 
+    mst->max_w              = 0.0;
+    mst->prim_ord           = malloc(n * sizeof(int));
+    mst->prim_par           = malloc(n * sizeof(int)); 
+
+    if(!mst->prim_ord || !mst->prim_par)        PRINT_AND_RETURN("malloc failed to init mst in prim\n", MALLOC_ERROR);
+    for(i = 0; i < n; i ++){
+        mst->prim_ord[i] = -1;
+        mst->prim_par[i] = -1;
+    }
+
+    // Heap initialization
+    heap = heap_constructor(mst->n_taxa);   
+    if(!heap)                       PRINT_AND_RETURN("heap initialization failed in prim\n", MALLOC_ERROR);
+    for(i = 0; i < mst->n_taxa; i++){
+        v_arr[i] = INT_MAX; // large number
+        get_node(i)     = heap_node_constructor(i ? v_arr[i] : 0, i);
+        if(!get_node(i))            PRINT_AND_RETURN("node initialization failed in prim\n", MALLOC_ERROR);
+        get_pos(i)      = i;
+    }
+
+    // Loop initialization
+    prim_ordering_counter = 0;
+    v_arr[0] = 0;
+    heap->size = mst->n_taxa;
+
+    // Prim's MST
+    while(heap->size){
+        printf("we\n");
+        head = pop_heap(heap);
+        if(!head)                   PRINT_AND_RETURN("heap popping failed in prim\n", GENERAL_ERROR);
+        cur_key = head->key;
+
+        cur_edge = graph->adjacency_list[cur_key];
+        while(cur_edge){
+            i = cur_edge->dest;
+
+            tmp_dist_data[0] = data[cur_key];
+            tmp_dist_data[1] = data[i];
+            cur_dist = (strcmp(distance_model, "JC") == 0) ? compute_jc_distance(tmp_dist_data, num_site) : compute_logdet_distance(tmp_dist_data, num_site);
+
+            if(in_heap(i) && cur_dist - v_arr[i] < EPS && i != cur_key){
+                v_arr[i] = cur_dist;
+                mst->prim_par[i] = cur_key;
+                if(update(heap, i, v_arr[i]) != SUCCESS) 
+                                    PRINT_AND_RETURN("updating heap value failed in prim\n", GENERAL_ERROR);
+                // j = i;
+                sto_dist = cur_dist; 
+            }  
+            cur_edge = cur_edge->next;
+        }
+        mst->max_w = MAX(mst->max_w, sto_dist); 
+        mst->prim_ord[prim_ordering_counter++] = cur_key; 
+    }
     return 0;
 }
 
