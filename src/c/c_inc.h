@@ -289,6 +289,7 @@ static const char ITREE_FLAG[N_ITREE_METHOD][MAX_FLAG_SZ] = {
   "fastme",
 };
 
+// extern const int N_DIST_MOD = 4;
 #define N_DIST_MOD  4
 
 static const char DIST_MOD_FLAG[N_DIST_MOD][MAX_FLAG_SZ] = {
@@ -298,8 +299,21 @@ static const char DIST_MOD_FLAG[N_DIST_MOD][MAX_FLAG_SZ] = {
   "P",
 };
 
-extern int constraint_inc_main(int argc, 
-                                char ** argv, 
-                                ml_options * master_ml_options);
+extern int constraint_inc_main(
+    int argc, 
+    char ** argv, 
+    ml_options * master_ml_options
+);
+
+// String defaults 
+static const char DEFAULT_FT_SUF[] 
+  = "first_tree.tree";
+
+static const char DEFAULT_DIST_SUF[] 
+  = "c_inc_input";
+
+// Announcement
+static const char ANNOUNCEMENT_INIT_TREE[] 
+  = "cheking for initial tree...\n";
 
 #endif

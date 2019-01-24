@@ -124,13 +124,13 @@ int make_constraint_trees_from_disjoint_subsets(int n,
       FCAL(
           GENERAL_ERROR,
           F_RAXML_CONSTRAINT,
-          make_raxml_constraint(msa_name, out_name, master_ml_options)
+          make_raxml_constraint(msa_name, out_name, master_ml_options, 1)
       );
     else if(master_ml_options->ctree_method == C_FASTTREE)
       FCAL(
           GENERAL_ERROR,
           F_FASTTREE_CONSTRAINT,
-          make_fasttree_constraint(msa_name, out_name, master_ml_options)
+          make_fasttree_constraint(msa_name, out_name, master_ml_options, 1)
       );
   }
 
@@ -201,25 +201,32 @@ int make_subset_label(char * tree_name,
   return 0;
 }
 
-int make_subtree(char * label, char * out_path, char * tree_name)
+int make_subtree(
+    char * label, 
+    char * out_path, 
+    ml_options * master_ml_options, 
+    int clear_lab)
 {
   FCAL(
       GENERAL_ERROR, 
       F_RMV_LABEL_IN_MAKE_SUBTREE,
-      rm_label_job(tree_name, tree_name)
+      rm_label_job(label, master_ml_options->init_tree_name)
   );
 
-  FCAL(
-      GENERAL_ERROR,
-      F_RMV_LABEL_IN_MAKE_SUBTREE,
-      nw_utils_job(tree_name, label, out_path)
-  );  
+  if(clear_lab)
+    FCAL(
+        GENERAL_ERROR,
+        F_RMV_LABEL_IN_MAKE_SUBTREE,
+        nw_utils_job(master_ml_options->init_tree_name, label, out_path)
+    );  
   return 0;
 }
 
-int make_fasttree_constraint(char * msa_name, 
-                              char * out_name, 
-                              ml_options * master_ml_options)
+int make_fasttree_constraint(
+    char * msa_name, 
+    char * out_name, 
+    ml_options * master_ml_options, 
+    int clear_lab)
 {
   FCAL(
       GENERAL_ERROR, 
@@ -230,17 +237,20 @@ int make_fasttree_constraint(char * msa_name,
           out_name
       )
   );
-  FCAL(
-      GENERAL_ERROR, 
-      F_RM_LBL_IN_MK_FT_CONSTRAINT,
-      rm_label_job(out_name, out_name)
-  );
+  if(clear_lab)
+    FCAL(
+        GENERAL_ERROR, 
+        F_RM_LBL_IN_MK_FT_CONSTRAINT,
+        rm_label_job(out_name, out_name)
+    );
   return 0;
 }
 
-int make_nj_constraint(char * msa_name, 
-                        char * out_name, 
-                        ml_options * master_ml_options)
+int make_nj_constraint(
+    char * msa_name, 
+    char * out_name, 
+    ml_options * master_ml_options, 
+    int clear_lab)
 {
   FCAL(
       GENERAL_ERROR, 
@@ -251,17 +261,20 @@ int make_nj_constraint(char * msa_name,
           out_name
       )
   );
-  FCAL(
-      GENERAL_ERROR, 
-      F_RM_LBL_IN_MK_NJ_CONSTRAINT,
-      rm_label_job(out_name, out_name)
-  );
+  if(clear_lab)
+    FCAL(
+        GENERAL_ERROR, 
+        F_RM_LBL_IN_MK_NJ_CONSTRAINT,
+        rm_label_job(out_name, out_name)
+    );
   return 0;
 }
 
-int make_fastme_constraint(char * msa_name,
-                            char * out_name,
-                            ml_options * master_ml_options)
+int make_fastme_constraint(
+    char * msa_name, 
+    char * out_name, 
+    ml_options * master_ml_options, 
+    int clear_lab)
 {
   FCAL(
       GENERAL_ERROR, 
@@ -272,18 +285,21 @@ int make_fastme_constraint(char * msa_name,
           out_name
       )
   );
-  FCAL(
-      GENERAL_ERROR, 
-      F_RM_LBL_IN_MK_FASTME_CONSTRAINT,
-      rm_label_job(out_name, out_name)
-  );
+  if(clear_lab)
+    FCAL(
+        GENERAL_ERROR, 
+        F_RM_LBL_IN_MK_FASTME_CONSTRAINT,
+        rm_label_job(out_name, out_name)
+    );
   return 0;
 }
 
-int make_raxml_constraint(char * msa_name, char * out_name, 
-                                                ml_options * master_ml_options)
+int make_raxml_constraint(
+    char * msa_name, 
+    char * out_name, 
+    ml_options * master_ml_options, 
+    int clear_lab)
 {
-
   char        raxml_name[GENERAL_BUFFER_SIZE];
   char        raxml_out_name[GENERAL_BUFFER_SIZE];
   char        raxml_dir_name[GENERAL_BUFFER_SIZE];
@@ -302,11 +318,12 @@ int make_raxml_constraint(char * msa_name, char * out_name,
                   msa_name,
                   raxml_dir_name)
   );
-  FCAL(
-      GENERAL_ERROR, 
-      F_RM_LBL_IN_MK_FASTME_CONSTRAINT,
-      rm_label_job(raxml_name, out_name)
-  );
+  if(clear_lab)
+    FCAL(
+        GENERAL_ERROR, 
+        F_RM_LBL_IN_MK_FASTME_CONSTRAINT,
+        rm_label_job(raxml_name, out_name)
+    );
   return 0;
 }
 

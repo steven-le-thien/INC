@@ -15,14 +15,69 @@
 int skip_counter =0;
 
 // All trees should be BTs 
-int dfs_lca_implementation(int node, int parent, BT * tree, int * dp, int * in_building, int * lca_parent, int * lca_child, int mode);
-int dfs_preorder(int node, int parent, BT * tree, int * in_building, int flag);
-int bfs_vote_implementation(BT * tree, int valid_start, int valid_end, int valid_start_parent, int * mapping, int * edge_child, 
-              int * edge_parent, int n, float ** d, int x, double q0, int revote_power, int ** revote_map, int all_quartets, 
-              int revoting, int * master_to_midx, float ** secondary_distance, ml_options * master_ml_options, char ** name_map, double correction, msa_t * msa);
-int find_insertion_edge_implementation(int * vote, int * edge_child, int *edge_parent, int * additional_edge_child, int * addition_edge_parent, int num_edges);
-void dfs_backtrack(int node, int parent, int findme, BT * tree, int * next_to_start, int * found);
+int dfs_lca_implementation(
+    int node, 
+    int parent, 
+    BT * tree, 
+    int * dp, 
+    int * in_building, 
+    int * lca_parent, 
+    int * lca_child, 
+    int mode                        
+);
+
+int dfs_preorder(
+    int node, 
+    int parent, 
+    BT * tree, 
+    int * in_building, 
+    int flag
+);
+
+int bfs_vote_implementation(
+    BT * tree, 
+    int valid_start, 
+    int valid_end, 
+    int valid_start_parent, 
+    int * mapping, 
+    int * edge_child, 
+    int * edge_parent, 
+    int n, 
+    float ** d, 
+    int x, 
+    double q0, 
+    int revote_power, 
+    int ** revote_map, 
+    int all_quartets, 
+    int revoting, 
+    int * master_to_midx, 
+    float ** secondary_distance, 
+    ml_options * master_ml_options, 
+    char ** name_map, 
+    double correction, 
+    msa_t * msa
+);
+
+int find_insertion_edge_implementation(
+    int * vote, 
+    int * edge_child, 
+    int *edge_parent, 
+    int * additional_edge_child, 
+    int * addition_edge_parent, 
+    int num_edges
+);
+
+void dfs_backtrack(
+    int node, 
+    int parent, 
+    int findme, 
+    BT * tree, 
+    int * next_to_start, 
+    int * found
+);
+
 int less_than_3_shared_taxa(INC_GRP * meta);
+
 void all_valid(INC_GRP * meta, VOTE_GRP * vote);
 
 /* Function to initialize variables relevant to voting to a blank state so that a new round 

@@ -15,13 +15,122 @@
 char TMP_FILE1[]                = "tool_tmp_file1";
 char TMP_FILE2[]                = "tool_tmp_file2";
 
+// Internal functions
+int set_up_trees_to_inc(ml_options * master_ml_options, int * num_ctree);
+int set_up_itree(ml_options * master_ml_options);
+int make_constraint_trees(int * num_ctree,  ml_options  * master_ml_options);
+int set_up_dist(ml_options * master_ml_options);
+
+int main(int argc, char ** argv){
+  // Pipe in a bunch of programs together
+  int         num_ctree;
+  ml_options master_ml_options;
+
+  FCAL(
+      GENERAL_ERROR,
+      F_RD_CMD_ARG,
+      read_ml_cmd_arg(argc, argv, &master_ml_options)
+  );
+
+  FCAL(
+      GENERAL_ERROR,
+      F_SET_UP_TREES_IN_MAIN,
+      set_up_trees_to_inc(&master_ml_options, &num_ctree)
+  );
+
+  // Check if the initial distance matrix is set up or need to set up
+  FCAL(
+      GENERAL_ERROR,
+      F_SET_UP_DIST_IN_MAIN,
+      set_up_dist(&master_ml_options)
+  );
+  
+  // Piping into constrained_inc code
+  FCAL( 
+      GENERAL_ERROR,
+      F_CINC_IN_MAIN,
+      constraint_inc(num_ctree, &master_ml_options)
+  );
+
+  return 0; 
+}   
+
+int set_up_trees_to_inc(ml_options * master_ml_options, int * num_ctree){
+  FCAL(
+      GENERAL_ERROR,
+      F_SET_UP_I_TREE_IN_SET_UP_TREE,
+      set_up_itree(master_ml_options)
+  );
+
+  // Making constraint trees 
+  if(master_ml_options->ctree_method != C_NO)
+    FCAL(
+        GENERAL_ERROR,
+        F_MAKE_CTREE_IN_SET_UP_TREE, 
+        make_constraint_trees(num_ctree, master_ml_options)
+    );
+  else (*num_ctree) = 0;
+  return 0;
+}
+
+int set_up_itree(ml_options * master_ml_options){
+  FILE        *f;
+  int         (*itree_job) (char * , char * , ml_options *, int);     
+  char        name[MAX_BUFFER_SIZE];
+
+  // Piping into fasttree 
+  printf(ANNOUNCEMENT_INIT_TREE);
+  if(!master_ml_options->init_tree_name){
+
+    sprintf(
+        master_ml_options->init_tree_name 
+            = SAFE_MALLOC(MAX_BUFFER_SIZE * sizeof(char)), 
+        "%s%s", 
+        master_ml_options->output_prefix, 
+        DEFAULT_FT_SUF
+    );
+    
+    f = fopen(name, "r");
+    if(!f){ // Call the tree constructor
+      switch(master_ml_options->itree_method){
+        case I_FASTTREE:
+          itree_job = make_fasttree_constraint;
+          break;
+        case I_RAXML:
+          itree_job = make_raxml_constraint;
+          break; 
+        case I_NJ:
+          itree_job = make_nj_constraint;
+          break; 
+        case I_FASTME:
+          itree_job = make_fastme_constraint;
+          break;
+      }
+
+      FCAL(
+          GENERAL_ERROR, 
+          F_ITREE_IN_MAIN,
+          itree_job(
+              master_ml_options->input_alignment,
+              master_ml_options->init_tree_name,
+              master_ml_options,
+              0
+          )
+      );
+    } else fclose(f);
+  }
+  return 0; 
+}
+
 // int skip_counter = 0;
 int make_constraint_trees(int * num_ctree,  ml_options  * master_ml_options){
   FILE *      f;
   FILE *      p;
-  char        in_name[10000];
-  char        out_name[10000];
-  char        msa_name[10000];
+  int (*ctree_job) (char * , char * , ml_options *, int); 
+ 
+  char        in_name[MAX_BUFFER_SIZE];
+  char        out_name[MAX_BUFFER_SIZE];
+  char        msa_name[MAX_BUFFER_SIZE];
   msa_t       msa;
 
   // Recomputing the constraint trees if necessary
@@ -93,142 +202,75 @@ int make_constraint_trees(int * num_ctree,  ml_options  * master_ml_options){
 
         switch(master_ml_options->ctree_method){
           case C_SUBTREE:
-            FCAL(
-                GENERAL_ERROR,
-                F_MAKE_ST_IN_MAKE_CTREE,
-                make_subtree(
-                    in_name,
-                    out_name,
-                    master_ml_options->init_tree_name
-                )
-            );
+            ctree_job = make_subtree;
             break;
-
           case C_RAXML:
-            FCAL(
-                GENERAL_ERROR,
-                F_MAKE_RAXML_IN_MAKE_CTREE,
-                make_raxml_constraint(
-                    msa_name,
-                    out_name,
-                    master_ml_options
-                )
-            );
+            ctree_job = make_raxml_constraint;
             break;
-
           case C_FASTTREE:
-            FCAL(
-                GENERAL_ERROR,
-                F_MAKE_FT_IN_MAKE_CTREE,
-                make_fasttree_constraint(
-                    msa_name,
-                    out_name,
-                    master_ml_options
-                )
-            );
+            ctree_job = make_fasttree_constraint;
             break;
-
           case C_NJ:
-            FCAL(
-                GENERAL_ERROR,
-                F_MAKE_NJ_IN_MAKE_CTREE,
-                make_nj_constraint(
-                    msa_name,
-                    out_name,
-                    master_ml_options
-                )
-            );
-            break;  
-
-          case C_FASTME:
-            FCAL(
-                GENERAL_ERROR,
-                F_MAKE_FASTME_IN_MAKE_CTREE,
-                make_fastme_constraint(
-                    msa_name,
-                    out_name,
-                    master_ml_options
-                )
-            );
+            ctree_job = make_nj_constraint;
             break;
-
+          case C_FASTME:
+            ctree_job = make_fastme_constraint;
+            break;
           default:
             break;
         }
+
+        FCAL(
+            GENERAL_ERROR, 
+            F_ITREE_IN_MAIN,
+            ctree_job(
+                master_ml_options->ctree_method ? in_name : msa_name,
+                out_name,
+                master_ml_options,
+                1
+            )
+        );
       }
       (*num_ctree)++;
-
     }
   }
   return 0;
 }
 
+int set_up_dist(ml_options * master_ml_options){
+  FILE * f;
+  if(!master_ml_options->init_d_name && 
+      !master_ml_options->use_initial_tree_as_spanning_tree && 
+      master_ml_options->use_distance_matrix){
 
-int main(int argc, char ** argv){
-  // Pipe in a bunch of programs together
-  FILE *      f;
-  char        name[MAX_BUFFER_SIZE];
-  // char        name2[MAX_BUFFER_SIZE];
-  int         num_ctree;
-
-  ml_options master_ml_options;
-  // option_t    tmp_options;
-
-
-  if(read_ml_cmd_arg(argc, argv, &master_ml_options)    != SUCCESS)         PRINT_AND_EXIT("read_cmd_arg failed in main\n", GENERAL_ERROR);
-    // Check if the initial tree is set up 
-    if(master_ml_options.ctree_method != C_NO){
-      // Piping into fasttree 
-      printf("checking for initial tree...\n");
-      if(!master_ml_options.init_tree_name){
-        sprintf(name, "%sfirst_tree.tree", master_ml_options.output_prefix);
-        master_ml_options.init_tree_name = name;
-        
-        f = fopen(name, "r");
-        if(!f){
-          // tmp_options.input_name = master_ml_options.input_alignment;
-          // tmp_options.tree_names = malloc(sizeof(char*));
-          // tmp_options.tree_names[0] = master_ml_options.init_tree_name;
-    
-
-          // if(fasttree_job(&tmp_options, &master_ml_options)           != SUCCESS)         PRINT_AND_EXIT("fasttree_job failed in main\n", GENERAL_ERROR);
-          // if(nj_job(&tmp_options, &master_ml_options) != SUCCESS) PRINT_AND_EXIT("n_job failed in main\n", GENERAL_ERROR);
-          // if(fastme_job(&tmp_options, &master_ml_options) != SUCCESS) PRINT_AND_EXIT("n_job failed in main\n", GENERAL_ERROR);
-          // if(fasttree_initial_tree_job(&tmp_options, &master_ml_options)           != SUCCESS)         PRINT_AND_EXIT("fasttree_job failed in main\n", GENERAL_ERROR);
-          // if(make_raxml_constraint(master_ml_options.input_alignment, master_ml_options.init_tree_name, &master_ml_options) != SUCCESS) PRINT_AND_EXIT("raxml job failedi n main\n", GENERAL_ERROR);
-        } else fclose(f);
-        
-      }
-      // Making constraint trees 
-      if(make_constraint_trees(&num_ctree, &master_ml_options) != SUCCESS)           PRINT_AND_EXIT("make constraint trees failed in main\n", GENERAL_ERROR);
-    } else num_ctree = 0;
-
-    // return 0;
-
-    // Check if the initial distance matrix is set up or need to set up
-    if(!master_ml_options.init_d_name && !master_ml_options.use_initial_tree_as_spanning_tree && master_ml_options.use_distance_matrix){
-      master_ml_options.init_d_name = malloc(1000);
-      sprintf(master_ml_options.init_d_name, "%sc_inc_input", master_ml_options.output_prefix);
-      f = fopen(master_ml_options.init_d_name, "r");
-      if(!f){
-        printf("writing distance matrix using PAUP* to %sc_inc_input...\n",  master_ml_options.output_prefix);
-        if(distance_matrix_job(
-          master_ml_options.distance_model, 
-          master_ml_options.input_alignment,
-          master_ml_options.init_d_name
-        ) != SUCCESS)         PRINT_AND_EXIT("fasttree_job failed in main\n", GENERAL_ERROR);
-      } else fclose(f);        
-    }
-
-    // Piping into constrained_inc code
-    FCAL( 
-        GENERAL_ERROR,
-        "constrained_inc failed in main\n",
-        constraint_inc(num_ctree, &master_ml_options)
+    sprintf(
+        master_ml_options->init_d_name 
+            = SAFE_MALLOC(MAX_BUFFER_SIZE * sizeof(char)), 
+        "%s%s", 
+        master_ml_options->output_prefix, 
+        DEFAULT_DIST_SUF
     );
-    // if(constraint_inc(num_ctree, &master_ml_options) != SUCCESS)        PRINT_AND_EXIT("constraint_inc failed in main", GENERAL_ERROR);
-  
-  return 0; 
-}   
+
+    f = fopen(master_ml_options->init_d_name, "r");
+    if(!f){
+      printf(
+          "%s%s\n",  
+          STATE_DIST, 
+          master_ml_options->init_d_name 
+      );
+      FCAL(
+          GENERAL_ERROR,
+          F_DIST_MAT_IN_MAIN,
+          distance_matrix_job(
+              master_ml_options->distance_model, 
+              master_ml_options->input_alignment,
+              master_ml_options->init_d_name
+          )
+      ); 
+    } else fclose(f);        
+  }
+
+  return 0;
+}
 
 
