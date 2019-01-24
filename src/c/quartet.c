@@ -37,8 +37,6 @@ int new_quartets_raxml(char * up, char * u1, char * u2, char * x, int * res, ml_
 
 	FILE * f, * p;
 
-	option_t tmp_options;
-
 	char stock_msa_name[] = "tmp.msa";
 	char stock_quartet_name[] = "tmp.quartet";
 	// char stock_msa_name = "tmp.msa";
@@ -66,19 +64,18 @@ int new_quartets_raxml(char * up, char * u1, char * u2, char * x, int * res, ml_
 		PRINT_AND_RETURN("tmp.quartet already exits in working directory\n", GENERAL_ERROR);
 	} 
 
-        tmp_options.output_name = NULL;
-        tmp_options.input_name = stock_msa_name;
-        tmp_options.tree_names = malloc(sizeof(char *));
-        tmp_options.tree_names[0] = stock_quartet_name;
-        if(raxml_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
+
+// int raxml_job(char * dist_model,  int l_distance_model,
+//               char * out_pfx,     int l_out_pfx,
+//               char * in_seq,      int l_in_seq,
+//               char * wd_sfx,      int l_wd_sfx)
+
+        if(raxml_job(master_ml_options->distance_model, stock_quartet_name, stock_msa_name, NULL) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
     // if(fasttree_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
 
         sprintf(sibling1, "RAxML_bestTree.%s", stock_quartet_name);
-        tmp_options.input_name = sibling1;
-        // tmp_options.input_name = stock_quartet_name;
 
-       tmp_options.output_name = stock_quartet_name;
-       if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
+       if(rm_label_job(sibling1, stock_quartet_name) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
 
     // tmp_options.out
 
@@ -152,8 +149,8 @@ int new_quartets_raxml(char * up, char * u1, char * u2, char * x, int * res, ml_
 	return 0;
 } 
 
-int ml_quartet(char * up, char * u1, char * u2, char * x, int * res, ml_options * master_ml_options, float * M,  int * revote_power){
-	option_t tmp_options;
+int ml_quartet(char * up, char * u1, char * u2, char * x, int * res, ml_options * master_ml_options, double * M,  int * revote_power){
+	// option_t tmp_options;
 	char cq[GENERAL_BUFFER_SIZE];
 	double ll_p, ll_1, ll_2;
 	FILE * f, * p;
@@ -185,14 +182,23 @@ int ml_quartet(char * up, char * u1, char * u2, char * x, int * res, ml_options 
 		PRINT_AND_RETURN("tmp.quartet already exits in working directory\n", GENERAL_ERROR);
 	} 
 
-	tmp_options.output_name = NULL;
-	tmp_options.input_name = stock_msa_name;
-        tmp_options.tree_names = malloc(sizeof(char *));
-        tmp_options.tree_names[0] = stock_quartet_name;
+	// tmp_options.output_name = NULL;
+	// tmp_options.input_name = stock_msa_name;
+ //    tmp_options.tree_names = malloc(sizeof(char *));
+ //    tmp_options.tree_names[0] = stock_quartet_name;
 
 	// parent 
 	sprintf(cq, "((%s,%s),(%s,%s));\n((%s,%s),(%s,%s));\n((%s,%s),(%s,%s));\n", up, x, u1, u2,  u1, x, up, u2,  u2, x, u1, up);
-	get_ll_from_raxml(&tmp_options, master_ml_options, cq, &ll_p, &ll_1, &ll_2);	
+	get_ll_from_raxml(
+		master_ml_options->distance_model,
+		stock_quartet_name,
+		stock_msa_name,
+		NULL, 
+		cq, 
+		&ll_p, 
+		&ll_1, 
+		&ll_2
+	);	
 	// sprintf(cq, "((%s,%s),(%s,%s));\n", u1, x, up, u2);
 	// get_ll_from_raxml(&tmp_options, master_ml_options, cq, &ll_1);	
 

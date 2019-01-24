@@ -22,6 +22,7 @@ int subset_msa(char * infile, char * outfile, msa_t * msa){
     msa_t sub_msa;
     int * masked; 
 
+
     sprintf(taxon_name, "%s_tmp", outfile);
     f = fopen(infile, "r");
 
@@ -96,8 +97,8 @@ int parse_input(msa_t * msa_ptr, char * filename){
 
     // Clear strings    
     sequence_counter = 0;
-    strclr(seq);
-    strclr(line);
+    STR_CLR(seq);
+    STR_CLR(line);
 
     // Redirecting stdin
     f = freopen(filename, "r", stdin);
@@ -137,7 +138,7 @@ int parse_input(msa_t * msa_ptr, char * filename){
                     free(msa_name);
                     PRINT_AND_RETURN("name allocation faiiled in no sequence", MALLOC_ERROR);
                 }
-                strclr(seq);
+                STR_CLR(seq);
                 break;
             default:
                 strcat(seq, line);
@@ -204,13 +205,13 @@ int compute_k2p_distance(msa_t * msa, float *** d){
     return 0;
 }
 
-int write_distance_matrix(float ** d, option_t * options, msa_t * msa){
+int write_distance_matrix(float ** d, ml_options * options, msa_t * msa){
     FILE * f;
     int i, j;
     char filename[MAX_BUFFER_SIZE];
 
-    strclr(filename);
-    strcat(filename, options->output_name);
+    STR_CLR(filename);
+    strcat(filename, options->output_prefix);
     strcat(filename, "c_inc_input");
 
     f = fopen(filename, "r");

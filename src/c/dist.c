@@ -6,13 +6,29 @@
 #include <string.h>
 #include <math.h>
 
+#include <omp.h>
+
 #include "dist.h"
 #include "utilities.h"
 #include "options.h"
 #include "tools.h"
 
-#define IS_FASTA(string)    (string[0] == '>')
-#define IS_PHYLIP(string)   ('0' <= string[0] && string[0] <= '9')
+// omp
+// omp_set_num_threads(4);e
+
+
+// Internal functions to compute distances
+int countStateChanges (char *s, char *t, int length, char c1, char c2, int *filter);
+int seqCharMatches (char *s, int length, char c, int *filter);
+int matrixCharMatches (char **s, int numSeqs, int length, char c, int *filter);
+int factorial (int n);
+int *nextPerm (int *p, int index, int size, int length);
+double permDiagProduct (double P[4][4], int *p, int d);
+int *initPerm (int size);
+double det (double P[4][4], int d);
+int count_selected(int ** gapFilterWarn, int numSites, char ** data);
+double compute_logdet_distance (char ** data, int numSites);
+double compute_jc_distance (char ** data, int numSites);
 
 // Internal functions
 int read_phylip(INC_GRP * meta, MAP_GRP * map, char * filename);
@@ -24,39 +40,59 @@ int read_phylip(INC_GRP * meta, MAP_GRP * map, char * filename);
  * Output:      0 on success, ERROR otherwise
  * Effect:      open a file, try to mallocate some structure
  */
-int parse_distance_matrix(INC_GRP * meta, MAP_GRP * map, option_t * options){
+int parse_distance_matrix(INC_GRP * meta, MAP_GRP * map, ml_options * options){
     FILE * f;
+    // int n;
     char buf[1000050];
-    strclr(buf);
+    STR_CLR(buf);
 
-    f = fopen(options->input_name, "r");
-    if(!f)                          PRINT_AND_RETURN("cannot open input file in parse_distance_matrix", OPEN_ERROR);
+    // if(meta->master_ml_options->use_distance_matrix){
+        f = fopen(options->init_d_name, "r");
+        if(!f)                          PRINT_AND_RETURN("cannot open input file in parse_distance_matrix", OPEN_ERROR);
 
-    // Read the first word of the file to see whether it is a FASTA file or a PHYLIP distance matrix
-    if(fscanf(f, "%s", buf) < 0)    PRINT_AND_RETURN("empty input file", GENERAL_ERROR); 
-    fclose(f);
+        // Read the first word of the file to see whether it is a FASTA file or a PHYLIP distance matrix
+        if(fscanf(f, "%s", buf) < 0)    PRINT_AND_RETURN("empty input file", GENERAL_ERROR); 
+        fclose(f);
 
-    if(IS_FASTA(buf)){ // Route through a PHYLIP creater (for now) THIS FEATURE IS NOT TESTED
-        // default_fp_options.input_name = options->input_name;
-        // fastphylo_job(&default_fp_options);
+        return read_phylip(meta, map, options->init_d_name);
+    // } else {
+        // Initialize other fields wihtout the distance matrix
 
-        //                                                                                     #if DEBUG
-        //                                                                                         printf("debug: input file is not a  distance matrix\n"); 
-        //                                                                                     #endif
+    //     f = fopen(options->input_name);
 
-        // return read_phylip(meta, map, default_fp_options.output_name);
-        return -1;
+    //     n = 0;
+    //     while(fscanf(f, "%s", buf) >= 0){
+    //         n++;
+    //     }
+    //     n /= 2;
+    //     fclose(f);
 
-    } else if(IS_PHYLIP(buf)) {
-                                                                                            #if DEBUG
-                                                                                                printf("debug: input file is a distance matrix\n"); 
-                                                                                            #endif
-        return read_phylip(meta, map, options->input_name);
 
-    } else {
+    //     meta->n_taxa    = n;
+    //     map->n_taxa     = n; 
+    //     map->master_to_name         = malloc(n * sizeof(char*));
+    //     meta->aln       = malloc(n * sizeof(char*));
+    //     if(!map->master_to_name)        PRINT_AND_RETURN("malloc failed to allocate name map in read_phylip", MALLOC_ERROR);
+    //     if(!meta->aln)                  PRINT_AND_RETURN("malloc failed to allocate aln in read_phylip". MALLOC_ERROR);
 
-        PRINT_AND_RETURN("invalid input format", GENERAL_ERROR);
-    }
+    //     f = fopen(options->input_name);
+    //     for(i = 0; i < n; i++){
+    //         // Allocation
+    //         map->master_to_name[i]  = malloc(MAX_NAME_SIZE * sizeof(char));
+            
+
+    //         if(!map->master_to_name[i]) PRINT_AND_RETURN("malloc failed to allocate name map in read_phylip", MALLOC_ERROR);
+
+    //         // Initialization
+    //         fscanf(f, ">%s", map->master_to_name[i]);
+    //         fscanf(f, "%s", buf);
+
+    //         meta->aln[i] = malloc((strlen(buf) + 10) * sizeof(char)); 
+    //         if(!map->aln[i]) PRINT_AND_RETURN("malloc failed to allocate aln in read_phylip", MALLOC_ERROR);
+    //         strcpy(map->aln[i], buf);
+    //     }
+    //     fclose(f);
+    // }
 }
 
 // INTERNAL IMPLEMENTATION
@@ -71,7 +107,7 @@ int read_phylip(INC_GRP * meta, MAP_GRP * map, char * filename){
     FILE * f;   // file object
     int n = 0;      // number of sequence
     int i, j;   // loop counters
-    float min;
+    // float min;
 
     printf("%s\n", filename);
     // Open file
@@ -110,17 +146,17 @@ int read_phylip(INC_GRP * meta, MAP_GRP * map, char * filename){
     fclose(f);
 
     // Corrected 2kp (for 0 entries)
-    min = 1.0 * INT_MAX; 
-    for(i = 0; i < meta->n_taxa; i++)
-        for(j = 0; j < meta->n_taxa; j++)
-            if(min - meta->d[i][j] > EPS && meta->d[i][j] > EPS)
-                min = meta->d[i][j];
+    // min = 1.0 * INT_MAX; 
+    // for(i = 0; i < meta->n_taxa; i++)
+    //     for(j = 0; j < meta->n_taxa; j++)
+    //         if(min - meta->d[i][j] > EPS && meta->d[i][j] > EPS)
+    //             min = meta->d[i][j];
 
-    min /= 2;
-    for(i = 0; i < meta->n_taxa; i++)
-        for(j = 0; j < meta->n_taxa; j++)
-            if(meta->d[i][j] < EPS && i != j)
-                meta->d[i][j] = min;
+    // min /= 2;
+    // for(i = 0; i < meta->n_taxa; i++)
+    //     for(j = 0; j < meta->n_taxa; j++)
+    //         if(meta->d[i][j] < EPS && i != j)
+    //             meta->d[i][j] = min;
 
 
                                                                                                 #if LARGE_DEBUG 
@@ -152,6 +188,21 @@ int read_phylip(INC_GRP * meta, MAP_GRP * map, char * filename){
     return 0;
 }
 
+double dist_from_msa(msa_t * msa, DIST_MOD distance_model, int i, int j, double correction){
+    double tmp_dist;
+    char * tmp_dist_data[2];
+
+    tmp_dist_data[0] = malloc(msa->N);
+    tmp_dist_data[1] = malloc(msa->N);
+
+    strcpy(tmp_dist_data[0], msa->msa[i]);
+    strcpy(tmp_dist_data[1], msa->msa[j]);
+
+    tmp_dist = distance_model == D_JC ? compute_jc_distance(tmp_dist_data, msa->N) : compute_logdet_distance(tmp_dist_data, msa->N); 
+    tmp_dist = tmp_dist >= 0.0 ? tmp_dist : correction;
+
+    return tmp_dist;
+}
 
 
 // This part is modified from FastME
@@ -161,9 +212,12 @@ int countStateChanges (char *s, char *t, int length, char c1, char c2,
     int i;
     int matches = 0;
 
-    for (i=0; i<length; i++)
+    #pragma omp parallel for private(i)
+    for (i=0; i<length; i++){
+
         if ((c1 == s[i]) && (c2 == t[i]))
             matches += filter[i];
+    }
 
     return (matches);
 }
@@ -173,9 +227,12 @@ int seqCharMatches (char *s, int length, char c, int *filter)
     int i;
     int matches = 0;
 
-    for (i=0; i<length; i++)
+    #pragma omp parallel for private(i)
+    for (i=0; i<length; i++){
+        // printf("wadw%d %d\n", omp_get_num_threads(), length);
         if (c == s[i])
             matches += filter[i];
+    }
 
     return (matches);
 }
@@ -185,8 +242,11 @@ int matrixCharMatches (char **s, int numSeqs, int length, char c, int *filter)
 {
     int i;
     int matches = 0;
+    // printf("wda\n");
 
+    #pragma omp parallel for private(i)
     for (i=0; i<numSeqs; i++){
+        // printf("wadw%d\n", omp_get_num_threads());
         // printf("i is %d, %s, %d, %d, %d\n", i, s[i], numSeqs, length, filter[0]);
         matches += seqCharMatches (s[i], length, c, filter);
     }
@@ -273,25 +333,35 @@ int count_selected(int ** gapFilterWarn, int numSites, char ** data){
     int i, j;
 
     *gapFilterWarn = (int *) malloc(numSites * sizeof (int));
+
+    #pragma omp parallel for private(i)
     for (i=0; i<numSites; i++)
         (*gapFilterWarn)[i] = 1;
                 // printf("ưdaw %d\n", numSites);
+// printf("wadw%d\n", omp_get_num_threads());
 
+    #pragma omp parallel for private(i, j)
     for (i=0; i<numSites; i++)
         for (j=0; j<2; j++){
-            // printf("%s\n", data[j]);
+            // printf("wadw%d %d\n", omp_get_num_threads(), i);
             if (('*' == data[j][i]) || ('?' == data[j][i]) ||
                     ('-' == data[j][i]))
                 (*gapFilterWarn)[i] = 0;
         }
+    // while(1);
 
-    for (i=0; i<numSites; i++)
+    #pragma omp parallel for private(i)
+    for (i=0; i<numSites; i++){
+        // printf("wadw%d %d\n", omp_get_num_threads(), i);
         if ((*gapFilterWarn)[i])
             count++;
+    }
+
     return count;
 }
 
 double compute_logdet_distance (char ** data, int numSites){
+    // printf("%d\n",omp_get_thread_num());
     int i, j;
     int * gapFilterWarn;
     int count; 
@@ -306,10 +376,13 @@ double compute_logdet_distance (char ** data, int numSites){
     count = count_selected(&gapFilterWarn, numSites, data);
     // printf("dwa%s %s %d\n", data[0], data[1], gapFilterWarn[0]);
 
+    // #pragma omp for private (i)
     for (i=0; i<2; i++)
         for (j=0; j<alphabetSize; j++)
             Pi2[i][j] = (double) (matrixCharMatches (&data[i], 1, numSites,
                 alphabet[i], gapFilterWarn)) / (1.0 * count);
+
+    // #pragma omp for private (i, j)
     for (i=0; i<alphabetSize; i++)
         for (j=0; j<alphabetSize; j++)
             P[i][j] = (double) (countStateChanges (data[0], data[1], numSites,
@@ -343,8 +416,9 @@ double compute_jc_distance (char ** data, int numSites){
     
     count = count_selected(&gapFilterWarn, numSites, data);
     
+    #pragma omp parallel
     for (i=0; i<numSites; i++)
-        if (data[0][i] != data[0][i])
+        if (data[0][i] != data[1][i])
             b += gapFilterWarn[i];
 
     b /= count;

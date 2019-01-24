@@ -73,7 +73,7 @@ int add_edge(GRAPH * graph, int u, int v){
 	return 0;
 }
 
-int random_centroids(char ** data, char * distance_model, int n, int seed, int *** disjoint_subset, int ** centroid_arr, double *** small_dist_mat, int *** overlapping_subset){
+int random_centroids(char ** data, DIST_MOD distance_model, int n, int seed, int *** disjoint_subset, int ** centroid_arr, double *** small_dist_mat, int *** overlapping_subset){
 	int * permu; 
 	int * centroid_size_count;
 	int * fast_disjoint_subset;
@@ -137,12 +137,12 @@ int random_centroids(char ** data, char * distance_model, int n, int seed, int *
 						tmp_dist_data[1] = data[j];
 						// printf("%d\n", permu[0]);
 						// printf("%d\n %s\n", data[permu[0]], tmp_dist_data[1]);
-						(*small_dist_mat)[j][0] = (strcmp(distance_model, "JC") == 0) ? compute_jc_distance(tmp_dist_data, num_site) : compute_logdet_distance(tmp_dist_data, num_site);
+						(*small_dist_mat)[j][0] = distance_model == D_JC ? compute_jc_distance(tmp_dist_data, num_site) : compute_logdet_distance(tmp_dist_data, num_site);
 					}
 					else {
 						tmp_dist_data[0] = data[permu[j]];
 						tmp_dist_data[1] = data[permu[i]];
-						(*small_dist_mat)[j][i] = (strcmp(distance_model, "JC") == 0) ? compute_jc_distance(tmp_dist_data, num_site) : compute_logdet_distance(tmp_dist_data, num_site);
+						(*small_dist_mat)[j][i] = distance_model == D_JC ? compute_jc_distance(tmp_dist_data, num_site) : compute_logdet_distance(tmp_dist_data, num_site);
 						if((*small_dist_mat)[j][i] < (*small_dist_mat)[j][fast_disjoint_subset[j]]){
 							fast_disjoint_subset[j] = i;
 							
@@ -289,7 +289,7 @@ int make_complete_bipartite(GRAPH * graph, int n, int * centroid_arr){
 	return 0;
 }
 
-int nn_from_sequences(GRAPH * graph, int *** disjoint_subset, char ** data, char * distance_model, int n, int seed){
+int nn_from_sequences(GRAPH * graph, int *** disjoint_subset, char ** data, DIST_MOD distance_model, int n, int seed){
 	int ** overlapping_subset = NULL;
 	int * centroid_arr = NULL;
 	double ** small_dist_mat = NULL;
@@ -316,7 +316,7 @@ int nn_from_sequences(GRAPH * graph, int *** disjoint_subset, char ** data, char
 // This is an approximate mst that does not depend on the distance matrix and runs in time O(n^1.5)
 // Input is a set of sequences in a char array 
 // Output is an mst as defined in prim.c (since the last step of this function is always to call the prim algorithm)
-int fast_mst(char ** data, int n, char * distance_model, int seed, MST_GRP * mst, int *** disjoint_subset){
+int fast_mst(char ** data, int n, DIST_MOD distance_model, int seed, MST_GRP * mst, int *** disjoint_subset){
 	GRAPH small_graph; 
 
 	// Compute NN graph

@@ -3,9 +3,7 @@
 
 #include "c_inc.h"
 
-
-
 extern int fast_lca_init(LCA_T * LCA);
-extern int fpm_on_tree(LCA_T * LCA, int p, int u1, int u2, int x, int * ret, double * weight);
+extern int fpm_on_tree(LCA_T * LCA, int p, int u1, int u2, int x, int * ret);
 
 #endif 

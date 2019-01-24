@@ -6,7 +6,7 @@
 #include "c_inc.h"
 
 // Initializations
-extern int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options);
+extern int parse_tree(INC_GRP * meta, MAP_GRP * map, ml_options * options);
 extern int init_growing_tree(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst);
 extern int write_newick(BT * tree, char * filename, char ** name_map);
 

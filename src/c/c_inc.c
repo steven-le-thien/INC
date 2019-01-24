@@ -27,6 +27,7 @@ int init_meta_with_msa(msa_t * msa, INC_GRP * meta, MAP_GRP * map){
     int i;
 
     meta->n_taxa = map->n_taxa = msa->num_seq;
+    meta->msa = msa;
     map->master_to_name         = malloc(msa->num_seq * sizeof(char*));
     for(i = 0; i < msa->num_seq; i++)
         map->master_to_name[i]  = msa->name[i];
@@ -38,7 +39,7 @@ int init_meta_with_msa(msa_t * msa, INC_GRP * meta, MAP_GRP * map){
 // Command line argument is as followed: constraint_inc -i <alignment file> -t <tree1> <tree2> ... 
 int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
     // Meta variables
-    option_t    options;
+    // option_t    options;
 
     INC_GRP     meta;
     MAP_GRP     map;
@@ -46,39 +47,47 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
 
     // No distance matrix tmp variables
     msa_t msa;
-    int ** disjoint_subset; 
+    // int ** disjoint_subset; 
 
     meta.master_ml_options = master_ml_options;
 
     // Parse options
     printf("reading in options...\n");
 
-    if(read_cmd_arg(argc, argv, &options)   != SUCCESS)         PRINT_AND_EXIT("read_cmd_arg failed in main\n", GENERAL_ERROR);
+    if(read_cmd_arg(argc, argv, master_ml_options)   != SUCCESS)         PRINT_AND_EXIT("read_cmd_arg failed in main\n", GENERAL_ERROR);
+    if(!meta.master_ml_options->use_initial_tree_as_spanning_tree){
+        if(meta.master_ml_options->use_distance_matrix){
+            // Getting the distance matrix
+            printf("parsing initial matrix and tree...\n");
+            if(parse_distance_matrix(&meta, &map, master_ml_options) 
+                                                    != SUCCESS)         PRINT_AND_EXIT("parse_distance_matrix failed in main\n", GENERAL_ERROR);
 
-    if(meta.master_ml_options->use_distance_matrix){
-        // Getting the distance matrix
-        printf("parsing initial matrix and tree...\n");
-        if(parse_distance_matrix(&meta, &map, &options) 
-                                                != SUCCESS)         PRINT_AND_EXIT("parse_distance_matrix failed in main\n", GENERAL_ERROR);
+            
+        } else {    
+            printf("without distance matrix...\n");
+            if(parse_input(&msa, meta.master_ml_options->input_alignment)
+                                                    != SUCCESS)         PRINT_AND_EXIT("read data failed in main\n", GENERAL_ERROR);
+
+            if(init_meta_with_msa(&msa, &meta, &map)!= SUCCESS)         PRINT_AND_EXIT("init meta with msa failed in main\n", GENERAL_ERROR);
+
+            // Used to do FastMST her
+            // printf("doing fast_mst...\n");
+            // if(fast_mst(msa.msa, meta.n_taxa, meta.master_ml_options->distance_modelmeta.master_ml_options->distance_model, SEED, &mst, &disjoint_subset)
+                                                    // != SUCCESS)         PRINT_AND_EXIT("fast_mst failed in main\n", GENERAL_ERROR); 
+
+            // printf("doing constraint trees...\n");
+            // if(make_constraint_trees_from_disjoint_subsets(meta.n_taxa, &msa, disjoint_subset, meta.master_ml_options) 
+                                                    // != SUCCESS)         PRINT_AND_EXIT("make_constraint_trees_from_disjont_subsets failed\n", GENERAL_ERROR);
+        }
 
         // Compute the MST 
         printf("computing the mst...\n");
-        if(prim(&meta, &mst)                    != SUCCESS)         PRINT_AND_EXIT("prim algorithm failed in main\n", GENERAL_ERROR);
-    } else {    
-        printf("without distance matrix...\n");
-        if(parse_input(&msa, meta.master_ml_options->input_alignment)
-                                                != SUCCESS)         PRINT_AND_EXIT("read data failed in main\n", GENERAL_ERROR);
-
-        if(init_meta_with_msa(&msa, &meta, &map)!= SUCCESS)         PRINT_AND_EXIT("init meta with msa failed in main\n", GENERAL_ERROR);
-
-        printf("doing fast_mst...\n");
-        if(fast_mst(msa.msa, meta.n_taxa, meta.master_ml_options->distance_model, SEED, &mst, &disjoint_subset)
-                                                != SUCCESS)         PRINT_AND_EXIT("fast_mst failed in main\n", GENERAL_ERROR); 
-
-        printf("doing constraint trees...\n");
-        if(make_constraint_trees_from_disjoint_subsets(meta.n_taxa, &msa, disjoint_subset, meta.master_ml_options) 
-                                                != SUCCESS)         PRINT_AND_EXIT("make_constraint_trees_from_disjont_subsets failed\n", GENERAL_ERROR);
+        if(prim(&meta, &mst)                        != SUCCESS)         PRINT_AND_EXIT("prim algorithm failed in main\n", GENERAL_ERROR);
+    } else {
+        if(parse_initial_tree_as_mst(&meta, &mst)   != SUCCESS)         PRINT_AND_EXIT("parse_initial_tree_as_mst failed in main\n", GENERAL_ERROR);
     }
+    
+
     
                                                                                                 // printf("debug: the following print out prim's ctree\n");
 
@@ -87,7 +96,7 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
                                                                                                 // printf("\n");
 
     // At this stage, all tree names should be in options->tree_name. It should be ok to parse them all at once since together they have at most 4M nodes
-    if(parse_tree(&meta, &map, &options)    != SUCCESS)         PRINT_AND_EXIT("parse tree failed in main\n", GENERAL_ERROR);
+    if(parse_tree(&meta, &map, master_ml_options)    != SUCCESS)         PRINT_AND_EXIT("parse tree failed in main\n", GENERAL_ERROR);
 
     
     // Initialize growing tree using the first 3 taxa in the ordering
@@ -113,7 +122,7 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
 
     printf("outputing the tree...\n");
     // Report the growing tree
-    write_newick(meta.gtree, options.output_name, map.master_to_name);
+    write_newick(meta.gtree, master_ml_options->output_prefix, map.master_to_name);
 
     printf("done, cleaning up\n");
     // Clean up
@@ -127,8 +136,8 @@ int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
     VOTE_GRP    vote;
     printf("current iteration is 2...");
     for(i = 3; i < meta->n_taxa; i++){
-        // print_inline_iteration(i, j, meta->n_taxa, 3);
-        printf("i is %d\n", i);
+        print_inline_iteration(i, j, meta->n_taxa, 3);
+        // printf("i is %d\n", i);
 
         if(init_vote(meta, map, mst, &vote, i)   != SUCCESS)             PRINT_AND_EXIT("init_vote failed in main loop\n", GENERAL_ERROR);
 
@@ -139,16 +148,16 @@ int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
         // Determine the starting and ending of the valid subtree in the growing tree
         if(find_valid_subtree(meta, map, mst, &vote)
                                                 != SUCCESS)             PRINT_AND_EXIT("find_valid_subtree failed in main loop\n", GENERAL_ERROR);   
-                                                                                            #if 1
-                                                                                                 printf("the vald subtree is %d %d %d %d\n", vote.st_lca.p, vote.st_lca.c, vote.nd_lca.p, vote.nd_lca.c); 
-                                                                                             if(i == 4 ) while(1);
-                                                                                            #endif
+                                                                                            // #if 1
+                                                                                             //     printf("the vald subtree is %d %d %d %d\n", vote.st_lca.p, vote.st_lca.c, vote.nd_lca.p, vote.nd_lca.c); 
+                                                                                             // if(i == 4 ) while(1);
+                                                                                            // #endif
         // Vote!
                                                                                              // printf("i is %d\n", i);
         if(bfs_vote(meta, map, mst, &vote, i)  
                                                 != SUCCESS)             PRINT_AND_EXIT("bfs_vote failed in main loop\n", GENERAL_ERROR);
 
-            printf("thje attachng edge is %d %d\n", vote.ins.p, vote.ins.c);
+            // printf("thje attachng edge is %d %d\n", vote.ins.p, vote.ins.c);
 
         // Attach to the growing subtree
         if(attach_leaf_to_edge(meta, map, mst, &vote, i)

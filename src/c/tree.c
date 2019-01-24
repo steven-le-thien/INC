@@ -34,11 +34,11 @@ void petite_dfs(int node, int parent, char ** name_map, char * builder, BT * tre
  * Output: 0 on success, ERROR otherwise
  * Effect: allocate some memories, build some trees, open some files, init 2 arrays in map and 1 in meta 
  */
-int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
+int parse_tree(INC_GRP * meta, MAP_GRP * map, ml_options * options){
     int i;  // loop variable
 
     // Init meta's field
-    if(meta->master_ml_options->use_four_point_method_with_tree){
+    if(meta->master_ml_options->qtree_method == Q_SUBTREE){
         meta->n_ctree = options->num_trees - 1;
         map->master_to_midx    = malloc(meta->n_taxa  * sizeof(int));
 
@@ -49,7 +49,7 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
                 meta->dm[i] = malloc(meta->n_taxa * sizeof(float));
             }
 
-            construct_unweighted_matrix_job(options->tree_names[0], options->output_name, meta->dm, map->master_to_name, map->master_to_midx);
+            make_unweighted_matrix(options->tree_names[0], options->output_prefix, meta->dm, map->master_to_name, map->master_to_midx);
         } else {
             
         }
@@ -79,7 +79,7 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, option_t * options){
     // Call the newick reader
     for(i = 0; i < meta->n_ctree; i++){
         printf("i is %d\n", i);
-        if(meta->master_ml_options->use_four_point_method_with_tree)
+        if(meta->master_ml_options->qtree_method == Q_SUBTREE)
             meta->ctree[i]      = read_newick(map, options->tree_names[i + 1], i);
         else 
             meta->ctree[i]      = read_newick(map, options->tree_names[i], i);
@@ -281,7 +281,7 @@ int write_newick(BT * tree, char * filename, char ** name_map){
     tree->n_node++;
 
     swap_adajcency(0, tree->n_node - 1, tree->adj_list[0][0].dest, tree);
-    strclr(buffer);
+    STR_CLR(buffer);
     petite_dfs(tree->n_node - 1, -1, name_map, buffer, tree);
     strcat(buffer, ";");
 
@@ -381,6 +381,7 @@ BT * tree_constructor(int n, BT_edge ** adj_list, int * degree, int * master_idx
 #define incr_level(node_p, node_c, max_node)    do{node_p = node_c; incr_node(node_c, max_node);} while(0)
 #define decr_level(node_p, node_c)              do{node_c = node_p; node_p = parent_map[node_c];} while(0)
 
+
 BT * read_newick(MAP_GRP * map, char * filename, int tree_idx){
     FILE *  f;
     int i, j;
@@ -409,7 +410,7 @@ BT * read_newick(MAP_GRP * map, char * filename, int tree_idx){
     parent_node     = -1;
 
     cur_char        = 0;
-    strclr(cur_name);
+    STR_CLR(cur_name);
 
     // Initialize global variables
     init();
@@ -565,7 +566,7 @@ int save_name(int cur_node, char * name, MAP_GRP * map, int tree_idx){
 
     master_idx_map[cur_node]    = i;
 
-    strclr(name);
+    STR_CLR(name);
 
     return 0;
 }

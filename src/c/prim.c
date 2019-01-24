@@ -38,6 +38,7 @@ int             heapify(min_heap * heap, int i);
  * Effect: allocate some memories, build some trees, open some files, init 2 arrays in map and 1 in meta 
  */
 int prim(INC_GRP * meta, MST_GRP * mst){
+
     // Heap variables
     min_heap * heap;
     heap_node * head;
@@ -48,8 +49,43 @@ int prim(INC_GRP * meta, MST_GRP * mst){
     int cur_key;
 
     // Temporary stack array
-    float v_arr[meta->n_taxa];
+    double v_arr[meta->n_taxa];
 
+    // Twice the maximum defined distance
+    double m_def;
+    double tmp_dist;
+    double sto_dist;
+
+    char * tmp_dist_data[2];
+    int num_site;
+// printf("adaadw\n");
+    if(!meta->master_ml_options->use_distance_matrix){
+        // Compute m_def
+        m_def = (double) -1e9;
+        num_site = meta->msa->N;
+        tmp_dist_data[0] = malloc(num_site);
+        tmp_dist_data[1] = malloc(num_site);
+// printf("adaadw\n");
+        for(i = 0; i < meta->n_taxa; i++){
+             printf("i is %d\n", i);
+            for(j = i + 1; j < meta->n_taxa; j++){
+               
+
+                strcpy(tmp_dist_data[0], meta->msa->msa[i]);
+                strcpy(tmp_dist_data[1], meta->msa->msa[j]);
+
+                tmp_dist = meta->master_ml_options->distance_model == D_JC ? compute_jc_distance(tmp_dist_data, num_site) : compute_logdet_distance(tmp_dist_data, num_site);
+                if(tmp_dist >= 0.0 && tmp_dist > m_def) 
+                    m_def = tmp_dist;
+
+                meta->correction = m_def;
+            }
+        }
+// printf("adaadw\n");
+        m_def *= 2.0;
+ 
+    }
+    // printf("adaadw\n");
     // Mst initialization
     mst->n_taxa             = meta->n_taxa; 
     mst->max_w              = 0.0;
@@ -62,6 +98,7 @@ int prim(INC_GRP * meta, MST_GRP * mst){
         mst->prim_par[i] = -1;
     }
 
+// printf("adaadw\n");
     // Heap initialization
     heap = heap_constructor(mst->n_taxa);   
     if(!heap)                       PRINT_AND_RETURN("heap initialization failed in prim\n", MALLOC_ERROR);
@@ -72,16 +109,19 @@ int prim(INC_GRP * meta, MST_GRP * mst){
         get_pos(i)      = i;
     }
 
+// printf("adaadw\n");
     // Loop initialization
     prim_ordering_counter = 0;
     v_arr[0] = 0;
     heap->size = mst->n_taxa;
                                                                                             #if DEBUG 
                                                                                                                                                                                                  int dflag = 0;
+    
 
                                                                                             #endif
     // Prim's MST
     while(heap->size){
+        // printf("adaadw\n");
                                                                                             #if DEBUG 
                                                                                                 //checking that heap property is always maintained at the root at each iteration\n"); 
                                                                                                 for(i = 1; i < heap->size; i++){
@@ -96,17 +136,33 @@ int prim(INC_GRP * meta, MST_GRP * mst){
         cur_key = head->key;
 
         for(i = 0; i < mst->n_taxa; i++){
-            if(in_heap(i) && meta->d[cur_key][i] - v_arr[i] < EPS && i != cur_key){
-                v_arr[i] = meta->d[cur_key][i];
+            if(meta->master_ml_options->use_distance_matrix){
+                tmp_dist = meta->d[cur_key][i];
+            } else {
+                tmp_dist = dist_from_msa(meta->msa, meta->master_ml_options->distance_model, cur_key, i, m_def);
+            }
+            if(in_heap(i) && tmp_dist - v_arr[i] < EPS && i != cur_key){
+                v_arr[i] = tmp_dist;
                 mst->prim_par[i] = cur_key;
                 if(update(heap, i, v_arr[i]) != SUCCESS) 
                                     PRINT_AND_RETURN("updating heap value failed in prim\n", GENERAL_ERROR);
-                j = i;
+                sto_dist = tmp_dist;
             }  
         }
-        mst->max_w = MAX(mst->max_w, meta->d[cur_key][j]); 
+        mst->max_w = MAX(mst->max_w, sto_dist); 
         mst->prim_ord[prim_ordering_counter++] = cur_key; 
+
     }
+    // printf("waawddawaw\n");
+    // if(tmp_dist_data[0]) free(tmp_dist_data[0]);
+    // if(tmp_dist_data[1]) free(tmp_dist_data[1]);
+
+    // for(i = 0; i < mst->n_taxa; i++){
+    //     free(meta->msa->msa[i]);
+    //     free(meta->msa->name[i]);
+    // }
+    // free(meta->msa->msa); 
+    // free(meta->msa->name); 
                                                                                             #if DEBUG
                                                                                                 if(!dflag) printf("debug: heap property is good throughout at the root\n");
                                                                                                 else printf("debug: heap value is wrong, flag is %d\n", dflag);
@@ -155,7 +211,13 @@ int prim(INC_GRP * meta, MST_GRP * mst){
     return 0;
 }
 
-int prim_on_small_graph(int n, GRAPH * graph, MST_GRP * mst, char * distance_model, char ** data){
+int parse_initial_tree_as_mst(INC_GRP * meta, MST_GRP * mst){
+
+    // meta->master_ml_options->init_tree_name; 
+    return 0;
+}
+
+int prim_on_small_graph(int n, GRAPH * graph, MST_GRP * mst, DIST_MOD distance_model, char ** data){
     // Heap variables
     min_heap * heap;
     heap_node * head;
@@ -215,7 +277,7 @@ int prim_on_small_graph(int n, GRAPH * graph, MST_GRP * mst, char * distance_mod
 
             tmp_dist_data[0] = data[cur_key];
             tmp_dist_data[1] = data[i];
-            cur_dist = (strcmp(distance_model, "JC") == 0) ? compute_jc_distance(tmp_dist_data, num_site) : compute_logdet_distance(tmp_dist_data, num_site);
+            cur_dist = distance_model == D_JC ? compute_jc_distance(tmp_dist_data, num_site) : compute_logdet_distance(tmp_dist_data, num_site);
 
             if(in_heap(i) && cur_dist - v_arr[i] < EPS && i != cur_key){
                 v_arr[i] = cur_dist;

@@ -1,5 +1,5 @@
 
-CC := gcc -Wall -MP -MD
+CC := /usr/local/bin/gcc-8 -Wall -MP -MD -fopenmp
 SRC := src/c
 
 SOURCES := $(wildcard $(SRC)/*.c)

@@ -10,488 +10,697 @@
 #include "tools.h"
 #include "utilities.h"
 
-#if 1
-char RAxML_bin[]    = "raxmlHPC-AVX2";
-char FastTree_bin[] = "FastTree"; 
-char PAUP_bin[]     = "paup4a163_osx";
-#else
-char RAxML_bin[]    = "raxmlHPC-PTHREADS-SSE3";
-char FastTree_bin[] = "FastTree";
-char PAUP_bin[]     = "paup4a163_centos64";
-#endif
 
 // Private functions
-void add_command(char * current_command, char * new_command);
-int find_prefix_and_dir_from_path(char * path, char * prefix, char * dir);
+int find_prefix_and_dir_from_path(char *, char *, char *, char *);
 
-int make_constraint_trees_from_disjoint_subsets(int n, msa_t * msa,  int ** disjoint_subset, ml_options * master_ml_options){
-    int i, j;
-    FILE * f;
-    printf("here\n");
-    char msa_name[GENERAL_BUFFER_SIZE];
-    char out_name[GENERAL_BUFFER_SIZE];
-    int sqrt_n = (int) sqrt(1.0 * n);
-
-    for(i = 0; i < sqrt_n; i++){
-        // Write the subset msa to a file 
-        sprintf(out_name, "%s_ctree%d.tree", master_ml_options->output_prefix, i);
-        sprintf(msa_name, "%s_ctree%d.msa", master_ml_options->output_prefix, i);
-        f = fopen(msa_name, "w");
-        // printf("%d\n", disjoint_subset[0][0]);
-        for(j = 0; j < n; j++)
-            if(disjoint_subset[j][i])
-                fprintf(f, ">%s\n%s\n", msa->name[j], msa->msa[j]);
-        fclose(f); 
-
-        // Call fasttree or raxml on the msa
-        if(master_ml_options->use_raxml_for_constraint_trees){
-            if(make_raxml_constraint(msa_name, out_name, master_ml_options) != SUCCESS) PRINT_AND_RETURN("make raxml constraint failed in main\n", GENERAL_ERROR);
-        } else if (master_ml_options->use_fasttree_for_constraint_trees){
-            if(make_fasttree_constraint(msa_name, out_name, master_ml_options) != SUCCESS) PRINT_AND_RETURN("make fasttree constraint failed in main \n", GENERAL_ERROR);
-        }
-    }
-
-    return 0;
-}
-
-int construct_unweighted_matrix_job(char * filename, char * output_prefix, float ** dm, char ** name_map, int * master_to_midx){
-    option_t tmp_options;
-    FILE * f;
-    char output_name[GENERAL_BUFFER_SIZE];
-    char name[GENERAL_BUFFER_SIZE];
-    int i, j, n;
-
-    sprintf(output_name, "%ssecondary_matrix", output_prefix);
-    f = fopen(output_name, "r");
-
-    if(!f){
-        tmp_options.input_name = filename; 
-        tmp_options.output_name = output_name;
-        // Call the actual maker
-        if(unweighted_job(&tmp_options) != SUCCESS)             PRINT_AND_RETURN("construct_unweighted_matrix_job failed\n", GENERAL_ERROR);
-
-        f = fopen(output_name, "r");
-    }
-    
-    fscanf(f, "%d", &n);
-    for(i = 0; i < n; i++){
-        // Locate name and update the mapping to the master indexing scheme
-        fscanf(f, "%s", name);
-        for(j = 0; j < n; j++){
-            if(strcmp(name, name_map[j]) == 0){
-                master_to_midx[j] = i;
-                break;
-            }
-        }
-
-        // Copy the actual distance matrix
-        for(j = 0; j < n; j++){
-            fscanf(f, "%f", &dm[i][j]);
-        }
-    }
-    fclose(f);
-
-    return 0;
-}
-
-int make_subset_label(char * tree_name, char * out_name, ml_options * master_ml_options){
-    option_t tmp_options; 
-
-    tmp_options.input_name = tree_name;
-    tmp_options.output_name = out_name;
-    if(subset_job(&tmp_options, master_ml_options)                 != SUCCESS)         PRINT_AND_RETURN("subset job failed in main\n", GENERAL_ERROR);
-    return 0;
-}
-
-int make_subtree(char * label, char * outname, char * tree_name){
-    option_t tmp_options; 
-    tmp_options.input_name = tree_name;
-    tmp_options.output_name = tree_name; // replacing file
-    if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in make_subtree\n", GENERAL_ERROR);
-
-    tmp_options.input_name = label;
-    tmp_options.output_name = outname;
-    tmp_options.tree_names = &tree_name;
-    if(nw_utils_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("nw_utils failed in make_subtree\n", GENERAL_ERROR);
-
-    return 0;
-}
-
-int make_fasttree_constraint(char * msa_name, char * out_name, ml_options * master_ml_options){
-    option_t tmp_options; 
-
-    // Call fasttree
-    tmp_options.input_name = msa_name;
-    tmp_options.tree_names = &out_name;
-
-    if(fasttree_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("fasttree failed in main", GENERAL_ERROR);
-
-    tmp_options.input_name = out_name;
-    tmp_options.output_name = out_name;
-    if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
-
-    return 0;
-}
-
-int make_raxml_constraint(char * msa_name, char * out_name, ml_options * master_ml_options){
-    option_t tmp_options; 
-
-    char        raxml_name[10000];
-    char        raxml_out_name[10000];
-    char        raxml_dir_name[10000];
-
-    // Find the out_name and dir_name for RAxML (this is required only for RAxML)
-    find_prefix_and_dir_from_path(out_name, raxml_out_name, raxml_dir_name);
-
-#if 1
-    tmp_options.input_name = msa_name;
-    tmp_options.output_name = raxml_dir_name;
-    tmp_options.tree_names = malloc(sizeof(char *));
-    tmp_options.tree_names[0] = raxml_out_name;
-    if(raxml_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
-#else
-    tmp_options.input_name = msa_name;
-    tmp_options.output_name = raxml_dir_name;
-    tmp_options.tree_names = malloc(sizeof(char *));
-    tmp_options.tree_names[0] = raxml_out_name;
-    if(raxml_with_initial_tree_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
-#endif
-
-    sprintf(raxml_name, "%sRAxML_bestTree.%s", raxml_dir_name, raxml_out_name);
-    tmp_options.input_name = raxml_name;
-    tmp_options.output_name = out_name;
-    if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
-    system("rm RAxML*");
-
-    return 0;
-}
-
-
-
+// Public functions 
 int constraint_inc(int argc, ml_options * master_ml_options){
-    int i, j, read_mode, len;
-    char command[GENERAL_BUFFER_SIZE];
-    char name[GENERAL_BUFFER_SIZE];
+  int i, j, read_mode, len;
+  char command[GENERAL_BUFFER_SIZE];
+  char name[GENERAL_BUFFER_SIZE];
 
-    int arg_count = 6 + argc + master_ml_options->use_four_point_method_with_tree; 
-    char ** argv = malloc(arg_count * sizeof(char*));
+  int arg_count = 6 + argc + (master_ml_options->qtree_method == Q_SUBTREE); 
+  char ** argv = malloc(arg_count * sizeof(char*));
 
-    for(i = 0; i < arg_count; i++){
-        argv[i] = malloc(10000 * sizeof(char));
-        argv[i][0] = 0;
-    }
+  for(i = 0; i < arg_count; i++){
+    argv[i] = malloc(10000 * sizeof(char));
+    argv[i][0] = 0;
+  }
+  
+  if(master_ml_options->qtree_method == Q_SUBTREE)
+    sprintf(
+        command, 
+        "%s -i %s -o %s -t %s", 
+        constraint_inc_bin,
+        master_ml_options->use_distance_matrix ? 
+            master_ml_options->init_d_name : 
+            master_ml_options->input_alignment, 
+        master_ml_options->output_prefix, 
+        master_ml_options->guide_tree_name
+    );
+  else if (master_ml_options->ctree_method != C_NO && argc > 0)
+    sprintf(
+        command, 
+        "%s -i %s -o %s -t",
+        constraint_inc_bin, 
+        master_ml_options->use_distance_matrix ? 
+            master_ml_options->init_d_name : 
+            master_ml_options->input_alignment, 
+        master_ml_options->output_prefix
+    );
+  else
+    sprintf(
+        command, 
+        "%s -o %s", 
+        constraint_inc_bin,
+        master_ml_options->output_prefix
+    );
+
+  for(i = 0; i < argc; i++){
+    sprintf(name, " %s_ctree%d.tree", master_ml_options->output_prefix, i);
+    strcat(command, name);
+  }
+
+  // Put commands into argv
+  j = 0;
+  len = 0;
+  read_mode = 1;
+  for(i = 0; i < strlen(command); i++){
+    if(!read_mode){
+      if(command[i] == ' ') continue; // still blank
+      else{
+        argv[j][len] = 0;
+        len = 0;
+        j++;
+        argv[j][len++] = command[i];
+        read_mode = 1;
+      }
+    } else { // still reading
+      if(command[i] == ' ')
+        read_mode = 0;
+      else 
+        argv[j][len++] = command[i]; 
+    }   
     
-    if(master_ml_options->use_four_point_method_with_tree){
-        sprintf(command, "constraint_inc -i %s -o %s -t %s", master_ml_options->init_d_name, master_ml_options->output_prefix, master_ml_options->guide_tree_name);
-    } else if (master_ml_options->use_constraint && argc > 0) {
-        sprintf(command, "constraint_inc -i %s -o %s -t", master_ml_options->init_d_name, master_ml_options->output_prefix);
-    } else {
-        sprintf(command, "constraint_inc -o %s", master_ml_options->output_prefix);
+  }
+  argv[j][len] = 0;
+
+  FCAL(GENERAL_ERROR,
+        ERR_CINC,
+        constraint_inc_main(arg_count, argv, master_ml_options)
+  );
+
+  return 0;
+}
+
+int make_constraint_trees_from_disjoint_subsets(int n, 
+                                                msa_t * msa,  
+                                                int ** disjoint_subset, 
+                                                ml_options * master_ml_options)
+{
+  int i, j;
+  FILE * f;
+
+  char msa_name[GENERAL_BUFFER_SIZE];
+  char out_name[GENERAL_BUFFER_SIZE];
+
+  int sqrt_n = (int) sqrt(1.0 * n);
+
+  for(i = 0; i < sqrt_n; i++){
+    // Write the subset msa to a file 
+    sprintf(out_name, "%s_ctree%d.tree", master_ml_options->output_prefix, i);
+    sprintf(msa_name, "%s_ctree%d.msa", master_ml_options->output_prefix, i);
+
+    // Read in MSA
+    f = fopen(msa_name, "w");
+    for(j = 0; j < n; j++)
+      if(disjoint_subset[j][i])
+        fprintf(f, ">%s\n%s\n", msa->name[j], msa->msa[j]);
+    fclose(f); 
+
+    // Call fasttree or raxml on the msa
+    if(master_ml_options->ctree_method == C_RAXML)
+      FCAL(
+          GENERAL_ERROR,
+          F_RAXML_CONSTRAINT,
+          make_raxml_constraint(msa_name, out_name, master_ml_options)
+      );
+    else if(master_ml_options->ctree_method == C_FASTTREE)
+      FCAL(
+          GENERAL_ERROR,
+          F_FASTTREE_CONSTRAINT,
+          make_fasttree_constraint(msa_name, out_name, master_ml_options)
+      );
+  }
+
+  return 0;
+}
+
+int make_unweighted_matrix(char * in_tree, 
+                            char * output_prefix, 
+                            float ** dm, 
+                            char ** name_map, 
+                            int * master_to_midx)
+{
+  FILE * f;
+  char output_name[GENERAL_BUFFER_SIZE];
+  char name[GENERAL_BUFFER_SIZE];
+  int i, j, n;
+
+  // Test output
+  sprintf(output_name, "%ssecondary_matrix", output_prefix);
+  f = fopen(output_name, "r");
+
+  // Make if not present
+  if(!f){
+    FCAL(
+        GENERAL_ERROR, 
+        F_CONSTR_UNW_MAT, 
+        unweighted_job(in_tree, output_name)
+    );
+    f = fopen(output_name, "r");
+  }
+  
+  fscanf(f, "%d", &n);
+  for(i = 0; i < n; i++){
+
+    // Locate name and update the mapping to the master indexing scheme
+    fscanf(f, "%s", name);
+    for(j = 0; j < n; j++){
+      if(strcmp(name, name_map[j]) == 0){
+        master_to_midx[j] = i;
+        break;
+      }
     }
 
-    for(i = 0; i < argc; i++){
-        sprintf(name, "%s_ctree%d.tree", master_ml_options->output_prefix, i);
-        add_command(command, name);
+    // Copy the actual distance matrix
+    for(j = 0; j < n; j++){
+      fscanf(f, "%f", &dm[i][j]);
     }
+  }
+  fclose(f);
 
-    printf("constraint_inc called with\n%s\n", command);
+  return 0;
+}
 
-    // Put commands into argv
-    j = 0;
-    len = 0;
-    read_mode = 1;
-    for(i = 0; i < strlen(command); i++){
-        if(!read_mode){
-            if(command[i] == ' ') continue; // still blank
-            else{
-                argv[j][len] = 0;
-                len = 0;
-                j++;
-                argv[j][len++] = command[i];
-                read_mode = 1;
-            }
-        } else { // still reading
-            if(command[i] == ' ')
-                read_mode = 0;
-            else 
-                argv[j][len++] = command[i]; 
-        }   
-        
+int make_subset_label(char * tree_name, 
+                      char * out_name, 
+                      ml_options * master_ml_options)
+{
+  FCAL(
+      GENERAL_ERROR,
+      F_SUBSET_LABEL,
+      subset_job(
+          tree_name,
+          out_name,
+          master_ml_options->ss_threshold,
+          master_ml_options->input_alignment
+      )
+  );
+  return 0;
+}
+
+int make_subtree(char * label, char * out_path, char * tree_name)
+{
+  FCAL(
+      GENERAL_ERROR, 
+      F_RMV_LABEL_IN_MAKE_SUBTREE,
+      rm_label_job(tree_name, tree_name)
+  );
+
+  FCAL(
+      GENERAL_ERROR,
+      F_RMV_LABEL_IN_MAKE_SUBTREE,
+      nw_utils_job(tree_name, label, out_path)
+  );  
+  return 0;
+}
+
+int make_fasttree_constraint(char * msa_name, 
+                              char * out_name, 
+                              ml_options * master_ml_options)
+{
+  FCAL(
+      GENERAL_ERROR, 
+      F_FT_IN_MK_FT_CONSTRAINT,
+      fasttree_job(
+          master_ml_options->distance_model,
+          msa_name,
+          out_name
+      )
+  );
+  FCAL(
+      GENERAL_ERROR, 
+      F_RM_LBL_IN_MK_FT_CONSTRAINT,
+      rm_label_job(out_name, out_name)
+  );
+  return 0;
+}
+
+int make_nj_constraint(char * msa_name, 
+                        char * out_name, 
+                        ml_options * master_ml_options)
+{
+  FCAL(
+      GENERAL_ERROR, 
+      F_NJ_IN_MK_NJ_CONSTRAINT,
+      fasttree_job(
+          master_ml_options->distance_model,
+          msa_name,
+          out_name
+      )
+  );
+  FCAL(
+      GENERAL_ERROR, 
+      F_RM_LBL_IN_MK_NJ_CONSTRAINT,
+      rm_label_job(out_name, out_name)
+  );
+  return 0;
+}
+
+int make_fastme_constraint(char * msa_name,
+                            char * out_name,
+                            ml_options * master_ml_options)
+{
+  FCAL(
+      GENERAL_ERROR, 
+      F_NJ_IN_MK_FASTME_CONSTRAINT,
+      fasttree_job(
+          master_ml_options->distance_model,
+          msa_name,
+          out_name
+      )
+  );
+  FCAL(
+      GENERAL_ERROR, 
+      F_RM_LBL_IN_MK_FASTME_CONSTRAINT,
+      rm_label_job(out_name, out_name)
+  );
+  return 0;
+}
+
+int make_raxml_constraint(char * msa_name, char * out_name, 
+                                                ml_options * master_ml_options)
+{
+
+  char        raxml_name[GENERAL_BUFFER_SIZE];
+  char        raxml_out_name[GENERAL_BUFFER_SIZE];
+  char        raxml_dir_name[GENERAL_BUFFER_SIZE];
+
+  // Find the out_name and dir_name for RAxML (this is required only for RAxML)
+  find_prefix_and_dir_from_path(out_name, 
+                                raxml_out_name, 
+                                raxml_dir_name, 
+                                raxml_name);
+
+  FCAL(
+      GENERAL_ERROR, 
+      F_RXML_IN_MK_RXML_CONSTRAINT,
+      raxml_job(master_ml_options->distance_model,
+                  raxml_out_name,
+                  msa_name,
+                  raxml_dir_name)
+  );
+  FCAL(
+      GENERAL_ERROR, 
+      F_RM_LBL_IN_MK_FASTME_CONSTRAINT,
+      rm_label_job(raxml_name, out_name)
+  );
+  return 0;
+}
+
+// Jobs
+int unweighted_job(char * in_tree, char * out_path){
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_UNWGHT,
+      "%s -t %s > %s",
+      tree_to_dist_bin,
+      in_tree,
+      out_path
+  );
+  return 0;
+}
+
+int fasttree_job(DIST_MOD dist_model, char * in_aln, char * out_path)
+{
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_FT,
+      "%s -nt %s -quiet < %s > %s",
+      FastTree_bin,
+      dist_model == D_JC ? FT_JC : FT_GTRGAMMA,
+      in_aln,
+      out_path
+  );
+  return 0;
+}
+
+int fastme_job(char * in_aln, char * out_path)
+{
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_FASTA_TO_PHYLIP,
+      "%s %s -o > %s",
+      fasta_to_phylip_bin,
+      in_aln,
+      TMP_FILE1
+  );
+
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_FASTME,
+      "%s -i %s -o %s -m B -n -s -d",
+      fastme_bin, 
+      TMP_FILE1,
+      out_path
+  );
+
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_RM,
+      "rm %s", 
+      TMP_FILE1
+  );
+  return 0;
+}
+
+int nj_job(DIST_MOD dist_model, char * in_aln, char * out_path)
+{
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_NJ_1,
+      "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%s; Quit;\"| %s -n",
+      in_aln,
+      TMP_FILE1,
+      PAUP_bin
+  );
+
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_NJ_2,
+      "echo \"exe %s; NJ distance=%s showtree=No;savetrees"\
+        "file=%s format=newick; Quit;\" | %s -n",
+      TMP_FILE1,
+      dist_model == D_JC ? NJ_JC : NJ_LOGDET, 
+      out_path, 
+      PAUP_bin
+  );
+  return 0;
+}
+
+int fasttree_initial_tree_job(DIST_MOD dist_model, char * in_aln, char * out_path)
+{
+  FILE * f, * p;
+  char buf[GENERAL_BUFFER_SIZE]; 
+
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_FT_INIT,
+      "%s -nt %s -quiet -noml -nni 0 -log %s < %s",
+      FastTree_bin,
+      dist_model == D_JC ? FT_JC : FT_GTRGAMMA,
+      TMP_FILE1,
+      in_aln
+  );
+
+  f = fopen(TMP_FILE1, "r");
+  p = fopen(out_path, "w");
+  while(fscanf(f, "%s", buf) >=0){
+    if(strcmp("NJ", buf) == 0){
+      fscanf(f, "%s", buf); 
+      fprintf(p, "%s\n", buf);
+      break;
     }
-    argv[j][len] = 0;
-// printf("argc is %d\n", arg_count);
-//     for(int i  = 0; i < argc; i++){
-//         printf("argv is %s\n", argv[i]);
-//     }
-    constraint_inc_main(arg_count, argv, master_ml_options);
+  }
+  fclose(f);
+  fclose(p);
 
-    return 0;
+  SYSCAL(
+      GENERAL_ERROR, 
+      ERR_RM, 
+      "rm %s", 
+      TMP_FILE1
+  );
+  return 0;
 }
 
-int unweighted_job(option_t * options){
-    char command[GENERAL_BUFFER_SIZE];
-    sprintf(command, "tree_to_dist.py -t %s > %s", options->input_name, options->output_name);
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling unweighted job\n", GENERAL_ERROR);
-    return 0;
+int upp_job(char * in_aln, char * in_tree, char * in_seq, int ss_size)
+{
+  // TODO: first_tree.tree
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_UPP,
+      "%s -a %s -t %s -s %s -A %d -S centroid", 
+      run_upp_bin, 
+      in_aln,
+      in_tree,
+      in_seq,
+      ss_size
+  );
+  return 0;
 }
 
-int fasttree_job(option_t * options,  ml_options * master_ml_options){
-    char command[GENERAL_BUFFER_SIZE];
-    char * gtrgamma_str = "-gtr -gamma";
-    char * jc_str = " ";
-    sprintf(command, "%s -nt %s -quiet < %s > %s", FastTree_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->input_name, options->tree_names[0]);
-    printf("fasttree was called as %s\n", command);
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling fasttree_job\n", GENERAL_ERROR);
-    return 0;
+int subset_job(char * in_tree, char * out_path, int ss_size, char * in_aln)
+{ 
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_SUBSET,
+      "%s -t %s -o %s -n %d -i %s", 
+      build_subsets_bin,
+      in_tree,
+      out_path,
+      ss_size,
+      in_aln
+  );
+  return 0;
 }
 
-int fasttree_initial_tree_job(option_t * options,  ml_options * master_ml_options){
-    FILE * f, * p;
-    // int i;
-    char command[100 * GENERAL_BUFFER_SIZE];
-    char * gtrgamma_str = "-gtr -gamma";
-    char * jc_str = " ";
-    sprintf(command, "%s -nt %s -quiet -noml -nni 0 -log tmp.log < %s", FastTree_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->input_name);
-    printf("fasttree was called as %s\n", command);
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling fasttree_job\n", GENERAL_ERROR);
-
-    f = fopen("tmp.log", "r");
-    p = fopen(options->tree_names[0], "w");
-    while(fscanf(f, "%s", command) >=0){
-        if(strcmp("NJ", command) == 0){
-            fscanf(f, "%s", command); 
-            // printf("%s %d %d\n", command, command[0], command[1]);
-            // for(i = 0; i < )
-            fprintf(p, "%s\n", command);
-            break;
-        }
-    }
-    fclose(f);
-    fclose(p);
-    // while(1);
-    system("rm tmp.log");
-    return 0;
+int nw_utils_job(char * in_tree, char * in_label, char * out_path)
+{
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_NW_UTILS,
+      "%s -v %s $(cat %s) > %s",
+      nw_prune_bin, 
+      in_tree,
+      in_label,
+      out_path
+  );
+  return 0;
 }
 
-int upp_job(option_t * options,  ml_options * master_ml_options){
-    char command[GENERAL_BUFFER_SIZE];
-    sprintf("run_upp.py -a %s -t %sfirst_tree.tree -s %s -A %d -S centroid", options->input_name, options->output_name, options->input_name, master_ml_options->ss_threshold);
-    
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling upp_job\n", GENERAL_ERROR);
-    return 0;
+int rm_label_job(char * in_tree, char * out_path)
+{
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_RM_LBL,
+      "%s -t %s -o %s", 
+      rm_lbl_bin,
+      in_tree, 
+      out_path
+  );
+  return 0;
 }
 
-int subset_job(option_t * options,  ml_options * master_ml_options){ 
-    char command[GENERAL_BUFFER_SIZE];
-    sprintf(command, "build_subsets_from_tree.py -t %s -o %s -n %d", options->input_name, options->output_name, master_ml_options->ss_threshold);
-    printf("command is %s\n", command);
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in subset_jon \n", GENERAL_ERROR);
-    return 0;
-}
+int raxml_job(DIST_MOD dist_model, 
+              char * out_pfx,    
+              char * in_seq,     
+              char * wd_sfx)
+{
+  // TODO: add length checking
 
-int nw_utils_job(option_t * options){
-    char command[GENERAL_BUFFER_SIZE];
-    sprintf(command, "nw_prune -v %s $(cat %s) > %s", options->tree_names[0], options->input_name, options->output_name);
-    printf("%s\n", command);
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling nw_utils\n", GENERAL_ERROR);
-    return 0;
-}
+  if(wd_sfx)
+    SYSCAL(
+        GENERAL_ERROR,
+        ERR_RXML,
+        "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -p 1 > %s", 
+        RAxML_bin, 
+        dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
+        out_pfx,
+        in_seq,
+        wd_sfx,
+        TMP_FILE1
+    );
+  else
+    SYSCAL(
+        GENERAL_ERROR,
+        ERR_RXML,
+        "%s -T 12 --silent -m %s -j -n %s -s %s -p 1 > %s",    
+        RAxML_bin, 
+        dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
+        out_pfx, 
+        in_seq,
+        TMP_FILE1
+    );
 
-int rm_label_job(option_t * options){
-    char command[GENERAL_BUFFER_SIZE];
-    sprintf(command, "remove_internal_labels.py -t %s -o %s", options->input_name, options->output_name);
-    // printf("%s\n", command);
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling rm_label_job\n", GENERAL_ERROR);
-    return 0;
-}
-
-int raxml_job(option_t * options,  ml_options * master_ml_options){
-    char command[GENERAL_BUFFER_SIZE];
-    char * gtrgamma_str = "GTRGAMMA";
-    char * jc_str = "GTRCAT -V --JC69";
-
-    if(options->output_name){
-        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -p 1 > rubbish",     RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name, options->output_name);
-    }
-    else{
-        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -p 1 > rubbish",    RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name);
-    }
-    
-    //printf("raxml was called as %s\n", command);
-    // while(1);
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling raxml job\n", GENERAL_ERROR);
-    return 0; 
+  SYSCAL(GENERAL_ERROR, ERR_RM, "rm %s", TMP_FILE1); 
+  return 0; 
 }
 
 // This also deletes the initial tree 
-int raxml_with_initial_tree_job(option_t * options,  ml_options * master_ml_options){
-    char command[GENERAL_BUFFER_SIZE];
-    char * gtrgamma_str = "GTRGAMMA";
-    char * jc_str = "GTRCAT -V --JC69";
+int raxml_with_initial_tree_job(DIST_MOD dist_model,
+                                char * out_pfx,
+                                char * in_aln,
+                                char * out_dir){
+  FCAL(
+      GENERAL_ERROR,
+      F_FFT_IN_RAXML_W_INIT,
+      fasttree_initial_tree_job(dist_model, in_aln, TMP_FILE1) 
+  );
 
-    option_t tmp_options;
-    tmp_options.input_name = options->input_name;
-    tmp_options.tree_names = malloc(sizeof(char*));
-    tmp_options.tree_names[0] = malloc(1000);
-    tmp_options.tree_names[0] = "tmp.fast";
+  if(out_dir)
+    SYSCAL(
+        GENERAL_ERROR,
+        ERR_RAXML_W_INIT,
+        "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -t %s -p 1 > %s", 
+        RAxML_bin, 
+        dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
+        out_pfx,
+        in_aln,
+        out_dir,
+        TMP_FILE1,
+        TMP_FILE2
+    );
+  else 
+    SYSCAL(
+        GENERAL_ERROR,
+        ERR_RAXML_W_INIT,
+        "%s -T 12 --silent -m %s -j -n %s -s %s -t %s -p 1 > %s", 
+        RAxML_bin, 
+        dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
+        out_pfx,
+        in_aln,
+        TMP_FILE1,
+        TMP_FILE2
+    );
 
-    if(fasttree_initial_tree_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("fast fasttre job gfailed in raxml job with initial tree\n", GENERAL_ERROR);
-
-    if(options->output_name){
-        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -t tmp.fast -p 1 > rubbish", RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name, options->output_name);
-    }
-    else{
-        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -t tmp.fast -p 1 > rubbish",       RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name);
-    }
-    
-    //printf("raxml was called as %s\n", command);
-    //while(1);
-    system(command);// != SUCCESS)          PRINT_AND_RETURN("error in calling raxml job\n", GENERAL_ERROR);
-    system("rm tmp.fast");
-    return 0; 
+  SYSCAL(GENERAL_ERROR, ERR_RM, "rm %s %s", TMP_FILE1, TMP_FILE2); 
+  return 0; 
 }
 
-int get_ll_from_raxml(option_t * options,  ml_options * master_ml_options, char * constraint_quartet, double* lp, double* l1, double* l2){
-    FILE * f; 
-    char tmp[GENERAL_BUFFER_SIZE];
-    double tmp_d;
-    int tmp_i;
-    int counter = 0;
-    sprintf(tmp, "RAxML_info.%s", options->tree_names[0]);
+int get_ll_from_raxml(DIST_MOD dist_model,
+                      char * out_pfx,
+                      char * in_aln,
+                      char * out_dir, 
+                      char * constraint_quartet, 
+                      double* lp, 
+                      double* l1, 
+                      double* l2)
+{
+  FILE * f; 
+  char tmp[GENERAL_BUFFER_SIZE];
+  double tmp_d;
+  int tmp_i;
+  int counter = 0;
+  sprintf(tmp, "RAxML_info.%s", out_pfx);
 
-    raxml_with_quartet_tree_job(options, master_ml_options, constraint_quartet);
+  FCAL(
+      GENERAL_ERROR,
+      F_RXAML_QTREE_IN_GET_LL,
+      raxml_with_quartet_tree_job(
+          dist_model, 
+          out_pfx,
+          in_aln,
+          out_dir,
+          constraint_quartet
+      )
+  );
 
-    // while(1);
-
-    f = fopen(tmp, "r");
-    while(fgets(tmp, sizeof(tmp), f)){
-        // printf("%s\n", tmp);
-        if(sscanf(tmp, "%d %lf", &tmp_i, &tmp_d) == 2){
-            if(tmp_i == 0) *lp = tmp_d;
-            if(tmp_i == 1) *l1 = tmp_d;
-            if(tmp_i == 2) *l2 = tmp_d;
-            counter ++;
-        }
+  f = fopen(tmp, "r");
+  while(fgets(tmp, sizeof(tmp), f)){
+    if(sscanf(tmp, "%d %lf", &tmp_i, &tmp_d) == 2){
+      if(tmp_i == 0) *lp = tmp_d;
+      if(tmp_i == 1) *l1 = tmp_d;
+      if(tmp_i == 2) *l2 = tmp_d;
+      counter ++;
     }
+  }
+  fclose(f);
 
-    // f = fopen(tmp ,"r");
-    // while(fscanf(f, "%lf", &tmp_d) >=0){
-    //     counter++;
-    //     if(counter % 3 == 2) *ll = tmp_d;
-    // }
-    fclose(f);
-
-
-    system("rm RAxML_*");
-    return 0;
+  SYSCAL(GENERAL_ERROR, ERR_RM, "rm RAxML_* %s", "");
+  return 0;
 }
 
-int raxml_with_quartet_tree_job(option_t * options,  ml_options * master_ml_options, char * constraint_quartet){
-    FILE * f;
-    char command[GENERAL_BUFFER_SIZE];
-    char * gtrgamma_str = "GTRGAMMA";
-    char * jc_str = "GTRCAT -V --JC69";
+int raxml_with_quartet_tree_job(DIST_MOD dist_model,
+                                char * out_pfx,
+                                char * in_aln,
+                                char * out_dir,
+                                char * constraint_quartet){
+  FILE * f;
 
-// printf("%s\n", constraint_quartet);
-    f = fopen("tmp.fast", "w"); // this will overwrite tmp.fast
-    fprintf(f, "%s\n", constraint_quartet); // this may not be secure
-    fclose(f);
+  f = fopen(TMP_FILE1, "w"); // this will overwrite tmp.fast
+  fprintf(f, "%s\n", constraint_quartet); // this may not be secure
+  fclose(f);
 
-    if(options->output_name){
-        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -f N -z tmp.fast -e 0.0001 -p 1 > rubbish", RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name, options->output_name);
-    }
-    else{
-        sprintf(command, "%s -T 12 --silent -m %s -j -n %s -s %s -f N -z tmp.fast -e 0.0001 -p 1 > rubbish",       RAxML_bin, strcmp(master_ml_options->distance_model, "JC") ? gtrgamma_str : jc_str, options->tree_names[0], options->input_name);
-    }
-    // printf("here\n");
-    // printf("raxml was called as %s\n", command);
-    // while(1);
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling raxml in raxml_with quartet tree\n", GENERAL_ERROR);
-    // while(1);
-    system("rm tmp.fast");
-    return 0; 
+  if(out_dir)
+    SYSCAL(
+        GENERAL_ERROR,
+        ERR_RAXML_QTREE,
+        "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -f N -z %s -p 1 > %s",
+        RAxML_bin,  
+        dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
+        out_pfx,
+        in_aln,
+        out_dir,
+        TMP_FILE1,
+        TMP_FILE2
+    );
+  else 
+    SYSCAL(
+        GENERAL_ERROR,
+        ERR_RAXML_QTREE,
+        "%s -T 12 --silent -m %s -j -n %s -s %s -f N -z %s -p 1 > %s",
+        RAxML_bin,
+        dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
+        out_pfx,
+        in_aln,
+        TMP_FILE1,
+        TMP_FILE2
+    );
+
+  SYSCAL(GENERAL_ERROR, ERR_RM, "rm %s %s", TMP_FILE1, TMP_FILE2); 
+  return 0; 
 }
 
 
-int distance_matrix_job(option_t * options, ml_options * master_ml_options){
-    char command[GENERAL_BUFFER_SIZE];
-    char cwd[PATH_MAX];
+int distance_matrix_job(DIST_MOD dist_model, char * in_aln, char * out_path){
+  // char cwd[PATH_MAX];
 
-    getcwd(cwd, sizeof(cwd));
+  // getcwd(cwd, sizeof(cwd));
 
-    // This is too long
-    sprintf(command, "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%s/nexus; Quit;\" | %s -n;", options->input_name, cwd, PAUP_bin);
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_DIST_1,
+      "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%s; Quit;\" | %s -n;",
+      in_aln, 
+      // cwd, 
+      TMP_FILE1,
+      PAUP_bin
+  );
 
-    sprintf(command, "echo \"exe nexus; DSet distance=%s; SaveDist format=RelPHYLIP file=%s triangle=both diagonal=yes; Quit;\" | %s -n", master_ml_options->distance_model, master_ml_options->init_d_name, PAUP_bin);
-    if(system(command) != SUCCESS)          PRINT_AND_RETURN("error in calling distance matrix job\n", GENERAL_ERROR);
-    return 0;
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_DIST_2,
+      "echo \"exe %s; DSet distance=%s; SaveDist format=RelPHYLIP"\
+                        " file=%s triangle=both diagonal=yes; Quit;\" | %s -n",
+      // cwd,
+      TMP_FILE1,
+      dist_model == D_JC ? NJ_JC : NJ_LOGDET,
+      out_path,
+      PAUP_bin
+  );
+  return 0;
 }
 
 // Internal functions
 
-int find_prefix_and_dir_from_path(char * path, char * prefix, char * dir){
-    int i, j;
-    // Malloc sequence, assuming path is created
-    if(!path)                               PRINT_AND_RETURN("path is NULL in find_prefix_and_dir_from_path\n", GENERAL_ERROR);
+int find_prefix_and_dir_from_path(char * path, 
+                                  char * prefix, 
+                                  char * dir, 
+                                  char * name){
+  int i, j;
+  // Malloc sequence, assuming path is created
+  ASSERT(GENERAL_ERROR, N_PATH_IN_FIND_PFX_DIR, path);
 
-    // Init
-    prefix[0] = 0;
-    dir[0] = 0;
+  // Init
+  STR_CLR(prefix);
+  STR_CLR(dir); 
 
-    // Find the last backslash, this separates the dir from the prefix
-    for(i = strlen(path) - 1; i >= 0; i--)
-        if(path[i] == '/') break;
-    
-    // Do a string copy
-    for(j = 0; j < strlen(path); j++){
-        if(j <= i) dir[j] = path[j];
-        else prefix[j - i - 1] = path[j];
-    }
-    dir[i + 1] = 0;
-    prefix[strlen(path) - i - 1] = 0;
-    return 0; 
+  // Find the last backslash, this separates the dir from the prefix
+  for(i = strlen(path) - 1; i >= 0; i--)
+    if(path[i] == '/') break;
+  
+  // Do a string copy
+  for(j = 0; j < strlen(path); j++){
+    if(j <= i) dir[j] = path[j];
+    else prefix[j - i - 1] = path[j];
+  }
+  dir[i + 1] = 0;
+  prefix[strlen(path) - i - 1] = 0;
+
+  sprintf(name, "%sRAxML_bestTree.%s", dir, prefix);
+
+  return 0; 
 }
-
-// int extract_starting_tree_from_fasttree(char * filename){
-//     // Call FastTree2
-//     option_t options;   
-//     FILE * f, * p;
-//     char name[100 * GENERAL_BUFFER_SIZE];
-
-//     options->input_name = NULL;     // task holder here
-//     options->output_name = NULL;    // task holder here
-//     options->tree_names = malloc(sizeof(char*));
-//     options->tree_names[0] = malloc(100);
-
-//     fasttree_job(&options);
-
-//     f = fopen(options->output_name, "r");
-//     p = fopen(filename, "w");
-//     if(!f) PRINT_AND_RETURN("file open failure for extract_starting_tree_from_fasttree", GENERAL_ERROR);
-
-//     while(fscanf(f, "%s", name) >= 0){
-//         if(strcmp(name, "NJ")){
-//             fscanf(f, "%s", name);
-//             fprintf(p, "%s\n", name);
-//             fclose(f); 
-//             fclose(p);
-//         }
-//         break;
-//     }
-//     return 0;
-// }
-
-// int extract_raxml_
-
-
-/* Helper function to add a command into a string of commands
- * Input:   current string of command and the new command to be added 
- * Output:  none
- * Effect   none
- */
-void add_command(char * current_command, char * new_command){
-    str_add_space(current_command);
-    strcat(current_command, new_command);
-}
-
