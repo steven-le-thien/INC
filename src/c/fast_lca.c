@@ -40,7 +40,8 @@ int fast_lca_init(LCA_T * LCA){
 
 // Assuming that the LCA has been initialized, perform fpm in constant time
 // The indices passed in are indexed from the guide tree
-int fpm_on_tree(LCA_T * LCA, int p, int u1, int u2, int x, int * ret){
+int fpm_on_tree(LCA_T * LCA, int * u, int * ret){
+	int p = u[0], u1 = u[1], u2 = u[2], x = u[3];
 	double pu1, pu2, px, u1u2, u1x, u2x;
 	double sump, sum1, sum2;
 

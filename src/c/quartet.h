@@ -5,7 +5,7 @@
 #include "c_inc.h"
 
 
-extern int four_point_method(float ** d, int u1, int u2, int up, int x, int * res);
-extern int new_quartets_raxml(char * up, char * u1, char * u2, char * x, int * res, ml_options * master_ml_options);
-extern int ml_quartet(char * up, char * u1, char * u2, char * x, int * res, ml_options * master_ml_options, double * M,  int * revote_power);
+extern int four_point_method(float ** d, int * u, int * res);
+extern int new_quartets_raxml(char ** name_map, int * u, int * res, ml_options * master_ml_options);
+extern int ml_quartet(char ** name_map, int * u, int * res, ml_options * master_ml_options, double * M);
 #endif

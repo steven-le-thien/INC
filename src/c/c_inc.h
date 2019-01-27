@@ -211,7 +211,7 @@ typedef struct s_edge{
 } S_EDGE;
 
 typedef struct vote{
-  int   n_taxa; 
+  BT * tree;
 
   // WARNING: redo initialization if the struct changes
   S_EDGE valid_st;    // the valid 'component', indexed in growing tree 
@@ -312,8 +312,75 @@ static const char DEFAULT_FT_SUF[]
 static const char DEFAULT_DIST_SUF[] 
   = "c_inc_input";
 
-// Announcement
-static const char ANNOUNCEMENT_INIT_TREE[] 
-  = "cheking for initial tree...\n";
+// static const char STATE_PASTA_DEC[]
+//   = "starting PASTA decompositions...\n";
+
+static const char F_RD_CMD_ARG_IN_CINC[] 
+  = "read_cmd_arg failed in constraint_inc\n";
+
+// static const char STATE_PARSE_MAT_TREE[]
+//   = "parsing distance matrix and trees...\n";
+
+static const char F_PARSE_MAT_TREE_IN_CINC[]
+  = "parsing matrix and tree failed in constraint inc\n";
+
+static const char F_PARSE_INPUT_IN_CINC[]
+  = "parsing input matrices failed in constraint inc\n";
+
+static const char F_INIT_META_IN_CINC[]
+  = "initialize meta failed in constraint inc\n";
+
+// static const char STATE_MST[]
+//   = "constructing the mst...\n";
+
+static const char F_PRIM_IN_CINC[]
+  = "prim failed in constraint inc\n";
+
+static const char F_PARSE_INIT_AS_MST_IN_CINC[]
+  = "parse initial matrices as mst in constraint inc\n";
+
+static const char F_PARSE_TREE_IN_CINC[]
+  = "parse initial tree failed in constraint inc\n";
+
+// static const char STATE_INIT_GTREE[]
+//   = "initialize growing tree...\n";
+
+static const char F_INIT_GTREE_IN_CINC[]
+  = "initializing growing tree failed in constraint_inc\n";
+
+// static const char STATE_BUILD_TREE[]
+//   = "building the tree...\n";
+
+static const char F_SERIAL_MAIN_LOOP_IN_CINC[]
+  = "serial main loop failed in constraint inc\n";
+
+// static const char STATE_OUT_TREE[] 
+//   = "outputting the tree...\n";
+
+static const char F_WRITE_TREE_IN_CINC[]
+  = "write tree failed in constraint inc\n";
+
+// static const char STATE_CLEAN[]
+//   = "cleaning up...\n";
+
+// static const char ITER_COUNT[] = "current iter is";
+
+static const char F_INIT_VOTE_IN_CINC[] 
+  = "initializing vote failed in constraint inc \n";
+
+static const char F_FIND_BIPART_IN_CINC[]
+  = "finding bipartition failed in constraint inc\n";
+
+static const char F_FIND_VALID_ST_IN_CINC[]
+  = "finding valid subtree failed in constraint inc\n";
+
+static const char F_BFS_VOTE_IN_CINC[]
+  = "bfs voting failed in constraint inc\n";
+
+static const char F_ATTACH_IN_CINC[]
+  = "attaching leaves failed in constraint inc\n";
+
+// static const char STATE_NO_DIST[] 
+//   = "without distance matrix...\n";
 
 #endif

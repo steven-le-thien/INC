@@ -292,6 +292,26 @@ int write_newick(BT * tree, char * filename, char ** name_map){
     return 0;
 }
 
+int get_degree(BT * tree, int idx){
+    return tree->degree[idx];
+}
+
+int get_adj(BT * tree, int idx, int order){
+    return tree->adj_list[idx][order].dest;
+}
+
+int get_edge_sample(BT * tree, int idx, int order){
+    return tree->adj_list[idx][order].sample;
+}
+
+void set_edge_master_idx(BT * tree, int ini, int dest, int val){
+    tree->adj_list[ini][dest].master_idx = val;
+}
+
+int get_edge_master_idx(BT * tree, int ini, int dest){
+    return tree->adj_list[ini][dest].master_idx;
+}
+
 // INTERNAL FUNCTION IMPLEMENTATIONS
 int attach_leaf_to_edge_impl(BT * growing_tree, int x, int additional_edge_parent, int additional_edge_child, int adjacent_in_mst){
     int i;
@@ -588,5 +608,7 @@ void petite_dfs(int node, int parent, char ** name_map, char * builder, BT * tre
 
     strcat(builder, ")");
 }
+
+
 
 

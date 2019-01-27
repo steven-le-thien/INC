@@ -79,7 +79,7 @@ int set_up_itree(ml_options * master_ml_options){
   char        name[MAX_BUFFER_SIZE];
 
   // Piping into fasttree 
-  printf(ANNOUNCEMENT_INIT_TREE);
+  printf(STATE_INIT_TREE);
   if(!master_ml_options->init_tree_name){
 
     sprintf(

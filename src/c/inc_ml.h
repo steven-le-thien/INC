@@ -3,12 +3,44 @@
 #ifndef INC_ML_H
 #define INC_ML_H
 
+// State strings
+static const char STATE_INIT_TREE[] 
+  = "cheking for initial tree...\n";
+
 static const char STATE_PASTA_DEC[] 
   = "performing PASTA decomposition\n";
 
 static const char STATE_DIST[]
   = "writing distance matrix using PAUP* to ";
 
+static const char STATE_RD_OPT[]
+  = "reading in options...\n";
+
+static const char STATE_PARSE_MAT_TREE[]
+  = "parsing initial matrix and tree...\n";
+
+static const char STATE_NO_DIST[]
+  = "without distance matrix...\n";
+
+static const char STATE_MST[]
+  = "computing the mst...\n";
+
+static const char STATE_INIT_GTREE[]
+  = "initializing the growing tree...\n"; 
+
+static const char STATE_BUILD_TREE[]
+  = "building the tree...\n";
+
+static const char STATE_OUT_TREE[]
+  = "outputing the tree...\n";
+
+static const char STATE_CLEAN[]
+  = "done, cleaning up\n";
+
+static const char ITER_COUNT[] 
+  = "current iteration is 2...";
+
+// Failure strings
 static const char F_MAKE_SS_LBL_IN_MAKE_CTREE[] 
   = "make_subset_label failed in make_constraint_trees\n";
 
@@ -56,5 +88,8 @@ static const char F_ITREE_IN_MAIN[]
 
 static const char F_DIST_MAT_IN_MAIN[]
   = "distance matrix failed in main\n";
+
+// static const char STATE_PASTA_DEC[]
+//   = "starting PASTA decompositions...\n";
 
 #endif
