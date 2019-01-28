@@ -68,6 +68,7 @@ int update_edge_count(
 
 int run_qmethod(
     INC_GRP * meta, 
+    int * master_to_midx,
     char ** name_map, 
     int * u, 
     int * quartet_result,
@@ -806,13 +807,14 @@ int update_edge_count(
 
 int run_qmethod(
     INC_GRP * meta, 
+    int * master_to_midx,
     char ** name_map, 
     int * u, 
     int * quartet_result,
     double * M)
 {
+  int i;
   float ** d = meta->d, ** dm = meta->dm;
-  int * gidx_to_master = meta->gtree->master_idx_map;
 
   ml_options * master_ml_options = meta->master_ml_options;
   QTREE_METHOD qtree_method = master_ml_options->qtree_method;
@@ -830,12 +832,16 @@ int run_qmethod(
       break;
 
     case Q_SUBTREE:
-      if(use_distance_matrix)
+      if(use_distance_matrix){
+        for(i = 0; i < 4; i++)
+          u[i] = master_to_midx[u[i]];
+        
         FCAL(
             GENERAL_ERROR,
             F_FPM_MAT_IN_BFS,
             four_point_method(dm, u, quartet_result)
         );
+      }
       else
         FCAL(
             GENERAL_ERROR,
@@ -930,6 +936,7 @@ int do_quartet(
         F_RUN_QMETHOD_IN_DO_Q,
         run_qmethod(
             meta,
+            map->master_to_midx,
             map->master_to_name,
             u,
             &quartet_result,
