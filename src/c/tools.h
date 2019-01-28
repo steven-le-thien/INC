@@ -129,9 +129,7 @@ extern int get_ll_from_raxml(
     char * in_aln,
     char * out_dir, 
     char * constraint_quartet, 
-    double* lp, 
-    double* l1, 
-    double* l2
+    double* ll
 );
 
 extern int raxml_with_quartet_tree_job(

@@ -10,4 +10,8 @@ extern double compute_logdet_distance (char ** data, int numSites);
 extern double compute_jc_distance (char ** data, int numSites);
 extern double dist_from_msa(msa_t * msa, DIST_MOD distance_model, int i, int j, double correction);
 
+const static char EMPTY_FILE[] 
+  = "file is empty in parse_distance_matrix\n";
+
+  
 #endif

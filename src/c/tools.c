@@ -582,15 +582,13 @@ int get_ll_from_raxml(DIST_MOD dist_model,
                       char * in_aln,
                       char * out_dir, 
                       char * constraint_quartet, 
-                      double* lp, 
-                      double* l1, 
-                      double* l2)
+                      double* ll)
 {
   FILE * f; 
   char tmp[GENERAL_BUFFER_SIZE];
   double tmp_d;
   int tmp_i;
-  int counter = 0;
+  int i;
   sprintf(tmp, "RAxML_info.%s", out_pfx);
 
   FCAL(
@@ -606,14 +604,11 @@ int get_ll_from_raxml(DIST_MOD dist_model,
   );
 
   f = fopen(tmp, "r");
-  while(fgets(tmp, sizeof(tmp), f)){
-    if(sscanf(tmp, "%d %lf", &tmp_i, &tmp_d) == 2){
-      if(tmp_i == 0) *lp = tmp_d;
-      if(tmp_i == 1) *l1 = tmp_d;
-      if(tmp_i == 2) *l2 = tmp_d;
-      counter ++;
-    }
-  }
+  while(fgets(tmp, sizeof(tmp), f))
+    if(sscanf(tmp, "%d %lf", &tmp_i, &tmp_d) == 2)
+      for(i = 0; i < 3; i++)
+        if(tmp_i == i) ll[i] = tmp_d;
+    
   fclose(f);
 
   SYSCAL(GENERAL_ERROR, ERR_RM, "rm RAxML_* %s", "");

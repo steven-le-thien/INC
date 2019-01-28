@@ -32,13 +32,14 @@ int             swap_node(int a, int b, min_heap * heap);
 int             heapify(min_heap * heap, int i);
 
 /* Construct a MST using heap implementation of Prim's algorithm
- * Input:       meta        meta variables, including the distance matrix (adjacency matrix) 
+ * Input:       meta        meta variables, including the distance matrix 
+ *                              (adjacency matrix) 
  *              mst         mst variables, to store the return value
  * Output: 0 on success, ERROR otherwise
- * Effect: allocate some memories, build some trees, open some files, init 2 arrays in map and 1 in meta 
+ * Effect: allocate some memories, build some trees, open some files, init 2 
+ *    arrays in map and 1 in meta 
  */
 int prim(INC_GRP * meta, MST_GRP * mst){
-
   // Heap variables
   min_heap * heap;
   heap_node * head;
@@ -56,33 +57,6 @@ int prim(INC_GRP * meta, MST_GRP * mst){
   double tmp_dist;
   double sto_dist;
 
-  // char * tmp_dist_data[2];
-  // int num_site;
-
-  // if(!meta->master_ml_options->use_distance_matrix){
-  //     // Compute m_def
-  //     m_def = (double) -1e9;
-  //     num_site = meta->msa->N;
-  //     tmp_dist_data[0] = malloc(num_site);
-  //     tmp_dist_data[1] = malloc(num_site);
-  //     for(i = 0; i < meta->n_taxa; i++){
-  //          printf("i is %d\n", i);
-  //         for(j = i + 1; j < meta->n_taxa; j++){
-         
-
-  //             strcpy(tmp_dist_data[0], meta->msa->msa[i]);
-  //             strcpy(tmp_dist_data[1], meta->msa->msa[j]);
-
-  //             tmp_dist = meta->master_ml_options->distance_model == D_JC ? compute_jc_distance(tmp_dist_data, num_site) : compute_logdet_distance(tmp_dist_data, num_site);
-  //             if(tmp_dist >= 0.0 && tmp_dist > m_def) 
-  //                 m_def = tmp_dist;
-
-  //             meta->correction = m_def;
-  //         }
-  //     }
-  //     m_def *= 2.0;
- 
-  // }
   // Mst initialization
   mst->n_taxa             = meta->n_taxa; 
   mst->max_w              = 0.0;
@@ -144,51 +118,6 @@ int prim(INC_GRP * meta, MST_GRP * mst){
     mst->max_w = MAX(mst->max_w, sto_dist); 
     mst->prim_ord[prim_ordering_counter++] = cur_key; 
   }
-                                              #if DEBUG
-                                                if(!dflag) printf("debug: heap property is good throughout at the root\n");
-                                                else printf("debug: heap value is wrong, flag is %d\n", dflag);
-
-                                                // printf("debug: the following print out prim's ordering\n");
-                                                // for(i = 0; i < meta->n_taxa; i++)
-                                                //     printf("%d ", mst->prim_ord[i]);
-                                                // printf("\n");
-
-                                                // printf("debug: the following print out prim's tree (parenting)\n");
-                                                // for(i = 0; i < meta->n_taxa; i++)
-                                                //     printf("%d ", mst->prim_par[i]);
-                                                // printf("\n");
-
-                                                printf("debug: test: the prim ordering is unique\n");
-                                                dflag = 0;
-                                                for(i = 0; i < meta->n_taxa; i++)
-                                                  for(j = 0; j < meta->n_taxa; j++)
-                                                    if(mst->prim_ord[i] == mst->prim_ord[j] && i != j)
-                                                      dflag ++;
-                                                if(!dflag) printf("pass test\n");
-                                                else printf("failed test with flag %d\n", dflag);
-
-                                                printf("debug: small test: if someone is A's parent's, it must be after A \n");
-                                                dflag = 0;
-                                                for(i = 1; i < meta->n_taxa; i++){
-                                                  int parent = mst->prim_par[i];
-                                                  int iflag = 0;
-
-                                                  for(j = 0; j < meta->n_taxa; j++){
-                                                    if(mst->prim_ord[j] == i){
-                                                      if(iflag){
-                                                        iflag++; // this is fine
-                                                      } else dflag++;  // this is not
-                                                    }
-                                                    if(mst->prim_ord[j] == parent){
-                                                      if(iflag) dflag++; 
-                                                      else iflag++;
-                                                    }
-                                                  }
-                                                }
-                                                if(!dflag) printf("pass test\n");
-                                                else printf("failed test with flag %d\n", dflag);
-                                                // while(1);
-                                              #endif
   return 0;
 }
 
@@ -198,7 +127,13 @@ int parse_initial_tree_as_mst(INC_GRP * meta, MST_GRP * mst){
   return 0;
 }
 
-int prim_on_small_graph(int n, GRAPH * graph, MST_GRP * mst, DIST_MOD distance_model, char ** data){
+int prim_on_small_graph(
+    int n, 
+    GRAPH * graph, 
+    MST_GRP * mst, 
+    DIST_MOD distance_model, 
+    char ** data)
+{
   // Heap variables
   min_heap * heap;
   heap_node * head;

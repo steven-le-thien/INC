@@ -8,13 +8,24 @@
 #include "utilities.h"
 
 // Internal implementations
-int find_arg_index(char * flag, char * content, ml_options * options, int * i, int argc, char ** argv);
-// int init_options(option_t * options);
-int init_ml_options(ml_options * options);
-int parse_ml_arg(char ** argv, int flag_index, int content_s, int content_e, ml_options * ml_options);
-// void destroy_options(option_t * options);
+int find_arg_index(
+    char * flag, 
+    char * content, 
+    ml_options * options, 
+    int * i, 
+    int argc, 
+    char ** argv);
 
-/* This function takes a point to some ml_options, popularizes its fields and set the corresponding values depending on the user input
+int init_ml_options(ml_options * options);
+int parse_ml_arg(
+    char ** argv, 
+    int flag_index, 
+    int content_s, 
+    int content_e, 
+    ml_options * ml_options);
+
+/* This function takes a point to some ml_options, popularizes its fields and 
+ *    set the corresponding values depending on the user input
  * It will also catch errors in incompatible calls
  * Input:       user inputs and an empty ml_options struct
  * Output:      0 on success, ERROR otherwise
@@ -256,20 +267,6 @@ int find_arg_index(char * flag,
   return 0;
 }
 
-/* Constructor for option struct
- * Input    pointer to option struct
- * Output   0 on success
- * Effect   set fields in option struct to default value
- */
-// int init_options(option_t * options){
-//   options->num_trees = 0;
-
-//   options->input_name = NULL;
-//   options->output_name = NULL;
-//   options->tree_names = NULL;
-
-//   return 0;
-// }
 
 int init_ml_options(ml_options * ml_options){
   // The first two should be initialized properly
@@ -296,20 +293,3 @@ int init_ml_options(ml_options * ml_options){
 
   return 0;
 }
-
-/* Destructor for option struct
- * Input    pointer to option struct
- * Output   0 on success, ERROR otherwise
- * Effect   set fields in option struct
- */
-// void destroy_options(option_t * options){
-//   int i;
-
-//   // If the struct passed in is not allocated then nothing happens
-//   if(!options) return;
-//   if(options->input_name)     free(options->input_name);
-//   if(options->output_name)    free(options->output_name);
-//   for(i = 0; i < options->num_trees; i++){
-//     free(options->tree_names[i]);
-//   }
-// }

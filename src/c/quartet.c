@@ -6,14 +6,29 @@
 
 #include "utilities.h"
 #include "tools.h"
+#include "quartet.h"
 
+char STOCK_MSA_NAME[] = "tmp.msa";
+char STOCK_QUARTET_NAME[] = "tmp.quartet";
 
-// Implementation of FPM. Input is a distance matrix and a quartet, u1 - u3 are known leaves, x is query taxon, results shows which leave is the sibling of the query taxon
+int match_and_print_msa(char * aln, char ** name_map, int * u);
+int make_quartet(DIST_MOD distance_model);
+int process_quartet(char ** name_map, int * u, int * res);
+int do_quartet_ll(
+    char ** name_map, 
+    int * u, 
+    DIST_MOD distance_model, 
+    int * res, 
+    double * M);
+
+// Implementation of FPM. Input is a distance matrix and a quartet, u1 - u3 are 
+//    known leaves, x is query taxon, results shows which leave is the sibling 
+//    of the query taxon
 int four_point_method(float ** d, int * u, int * res){
   int i;
   float tmp, m = 1e9;
 
-  for(i = 1; i < 4; i++){
+  for(i = 1; i < QUAD; i++){
     tmp = d[u[0]][u[i]] + (i == 2) ? d[u[1]][u[3]] : d[u[2]][u[4 - i]];
     if(m < tmp){
       m = tmp;
@@ -23,87 +38,137 @@ int four_point_method(float ** d, int * u, int * res){
   return 0;
 }
 
-int new_quartets_raxml(char ** name_map, int * u, int * res, ml_options * master_ml_options){
-  char sibling1[MAX_NAME_SIZE];
-  char sibling2[MAX_NAME_SIZE];
-  char cur_char;
-  int counter;
-  int yes;
+int new_quartets_raxml(
+    char ** name_map, 
+    int * u, 
+    int * res, 
+    ml_options * master_ml_options)
+{
+  FCAL(
+      GENERAL_ERROR,
+      F_MATCH_PRINT_IN_NEW_Q_RXML,
+      match_and_print_msa(master_ml_options->input_alignment, name_map, u) 
+  ); 
 
+  FCAL(
+      GENERAL_ERROR,
+      F_MK_Q_IN_NEW_Q_RXML,
+      make_quartet(master_ml_options->distance_model) 
+  );
+
+  FCAL(
+      GENERAL_ERROR,
+      F_PROCESS_Q_IN_NEW_Q_RXML,
+      process_quartet(name_map, res, u)
+  );
+  
+  SYSCAL(
+      GENERAL_ERROR, 
+      ERR_RM, 
+      "rm %s %s %s", 
+      STOCK_QUARTET_NAME, 
+      STOCK_MSA_NAME, 
+      "RAxML_*"
+  ); 
+
+  return 0;
+} 
+
+int ml_quartet(
+    char ** name_map, 
+    int * u, 
+    int * res, 
+    ml_options * master_ml_options, 
+    double * M)
+{
+  FCAL(
+      GENERAL_ERROR,
+      F_MATCH_PRINT_IN_ML_Q,
+      match_and_print_msa(master_ml_options->input_alignment, name_map, u) 
+  ); 
+
+  FCAL(
+      GENERAL_ERROR,
+      F_DO_Q_LL_IN_ML_Q,
+      do_quartet_ll(name_map, u, master_ml_options->distance_model, res, M)
+  );
+
+  SYSCAL(
+      GENERAL_ERROR, 
+      ERR_RM, 
+      "rm %s %s %s", 
+      STOCK_QUARTET_NAME, 
+      STOCK_MSA_NAME, 
+      "RAxML_*"
+  );
+  return 0;
+}
+
+int match_and_print_msa(char * aln, char ** name_map, int * u){
   FILE * f, * p;
-  char * up = name_map[u[0]];
-  char * u1 = name_map[u[1]];
-  char * u2 = name_map[u[2]];
-  char * x = name_map[u[3]];
+  int i;
 
-  char stock_msa_name[] = "tmp.msa";
-  char stock_quartet_name[] = "tmp.quartet";
-  // char stock_msa_name = "tmp.msa";
+  char buf[GENERAL_BUFFER_SIZE];
 
-  f = fopen(stock_msa_name, "w");
-  p = fopen(master_ml_options->input_alignment, "r");
-  // printf("hre-1, %s %s %s %s %s\n", up, u1, u2, x, master_ml_options->input_alignment);
-  while(fscanf(p, "%s", sibling1) >= 0){
-    // printf("curent is %s\n", sibling1);
-    if(!strcmp(&sibling1[1], up) || !strcmp(&sibling1[1], u1) || !strcmp(&sibling1[1], u2) || !strcmp(&sibling1[1], x)){
-      // printf("insderd %s\n", sibling1);
-      fprintf(f, "%s\n", sibling1);
-      fscanf(p, "%s", sibling1);
-      fprintf(f, "%s\n", sibling1);
-    } else 
-      fscanf(p, "%s", sibling1);
+  f = fopen(STOCK_MSA_NAME, "w");
+  p = SAFE_FOPEN_RD(aln);
+
+  while(fscanf(p, "%s", buf) >= 0){
+    for(i = 0; i < QUAD + 1; i++)
+      if(i == QUAD) // no match
+        fscanf(p, "%s", buf);
+      else if(STR_EQ(&buf[1], name_map[u[i]])){
+        fprintf(f, "%s\n", buf);
+        fscanf(p, "%s", buf);
+        fprintf(f, "%s\n", buf);
+      }
   }
   fclose(f);
   fclose(p);
 
-  // Make subtree
-  f = fopen(stock_quartet_name, "r"); 
+  return 0;
+}
+
+int make_quartet(DIST_MOD distance_model){
+  char buf[GENERAL_BUFFER_SIZE];
+  FILE * f = SAFE_FOPEN_RD(STOCK_QUARTET_NAME);
+
   if(f){
     fclose(f);
-    PRINT_AND_RETURN("tmp.quartet already exits in working directory\n", GENERAL_ERROR);
+    ASSERT(GENERAL_ERROR, W_TMP_Q_EXIST, 0);
   } 
 
+  FCAL(
+      GENERAL_ERROR,
+      F_RXML_JOB_IN_MAKE_Q,
+      raxml_job(
+          distance_model, 
+          STOCK_QUARTET_NAME, 
+          STOCK_MSA_NAME, 
+          NULL
+      )
+  );
 
-// int raxml_job(char * dist_model,  int l_distance_model,
-//               char * out_pfx,     int l_out_pfx,
-//               char * in_seq,      int l_in_seq,
-//               char * wd_sfx,      int l_wd_sfx)
+  sprintf(buf, "RAxML_bestTree.%s", STOCK_QUARTET_NAME);
 
-        if(raxml_job(master_ml_options->distance_model, stock_quartet_name, stock_msa_name, NULL) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
-    // if(fasttree_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
+  FCAL(
+      GENERAL_ERROR,
+      F_RM_LBL_JOB_IN_MAKE_Q,
+      rm_label_job(buf, STOCK_QUARTET_NAME)
+  );
+  return 0;
+}
 
-        sprintf(sibling1, "RAxML_bestTree.%s", stock_quartet_name);
 
-       if(rm_label_job(sibling1, stock_quartet_name) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
 
-    // tmp_options.out
 
-  // f = fopen("tmp.quartet", "r");  // the tree looks like ((A, B), (C, D));
-  // fscanf(f, "%s", sibling1);
-  // fclose(f);
-  // printf("tree is %s\n", sibling1);
+int process_quartet(char ** name_map, int * u, int * res){
+  char sib[2][GENERAL_BUFFER_SIZE];
+  FILE * f = SAFE_FOPEN_RD(STOCK_QUARTET_NAME);
+  int counter = 0, yes = 0;
+  int idx[2], i;
+  char cur_char;
 
-  // tmp_options.output_name = NULL;
-  // tmp_options.input_name = stock_msa_name;
- //    tmp_options.tree_names = malloc(sizeof(char *));
- //    tmp_options.tree_names[0] = stock_quartet_name;
- //    // if(raxml_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
- //    if(fasttree_job(&tmp_options, master_ml_options) != SUCCESS) PRINT_AND_RETURN("raxml_job failed in main", GENERAL_ERROR);
-
- //    // sprintf(sibling1, "RAxML_bestTree.%s", stock_quartet_name);
- //    // tmp_options.input_name = sibling1;
- //    tmp_options.input_name = stock_quartet_name;
- //    tmp_options.output_name = stock_quartet_name;
- //    if(rm_label_job(&tmp_options) != SUCCESS) PRINT_AND_RETURN("remove label failed in main", GENERAL_ERROR);
-
-        f = fopen("tmp.quartet", "r");  // the tree looks like ((A, B), (C, D));
-  fscanf(f, "%s", sibling1);
-  fclose(f);
-  // printf("tree is %s\n", sibling1);
-
-  f = fopen("tmp.quartet", "r");  // the tree looks like ((A, B), (C, D));
-  counter = 0;
-  yes = 0;
   while(fscanf(f, "%c", &cur_char) >= 0){
     if(cur_char == '(') {
       yes = 1;
@@ -112,123 +177,95 @@ int new_quartets_raxml(char ** name_map, int * u, int * res, ml_options * master
     }
     if(yes == 1){
       if(cur_char == ',') {
-        sibling1[counter] = 0;
+        sib[0][counter] = 0;
         yes = 2;
         counter = 0;
       } else {
-        sibling1[counter++] = cur_char;
+        sib[0][counter++] = cur_char;
       }
     } else if(yes == 2){
       if(cur_char == ')'){
-        sibling2[counter] = 0;
+        sib[1][counter] = 0;
         break;
       } else {
-        sibling2[counter++] = cur_char;
+        sib[1][counter++] = cur_char;
       }
     }
   }
   fclose(f);
 
-  // Set result
-  if((strcmp(sibling1, up) == 0 && strcmp(sibling2, u1) == 0) ||
-    (strcmp(sibling2, up) == 0 && strcmp(sibling1, u1) == 0) ||
-    (strcmp(sibling1, u2) == 0 && strcmp(sibling2, x) == 0) ||
-    (strcmp(sibling2, u2) == 0 && strcmp(sibling1, x) == 0)) *res = 2;
+  for(i = 0; i < 2; ++i)
+    for(idx[i] = 0; idx[i] < QUAD; ++idx[i])
+      if(STR_EQ(sib[i], name_map[u[idx[i]]]))
+        break;
 
-  else if((strcmp(sibling1, up) == 0 && strcmp(sibling2, u2) == 0) ||
-    (strcmp(sibling2, up) == 0 && strcmp(sibling1, u2) == 0) ||
-    (strcmp(sibling1, u1) == 0 && strcmp(sibling2, x) == 0) ||
-    (strcmp(sibling2, u1) == 0 && strcmp(sibling1, x) == 0)) *res = 1;
-
-  else *res = 0;
-  // printf("siblin %s %s %d\n", sibling1, sibling2, *res);
-  // Remmove tmp files (careful, this is destructive)
-  system("rm tmp.msa tmp.quartet RAxML_*");
+  if(idx[0] == 3)
+    *res = idx[1];
+  else if(idx[1] == 3)
+    *res = idx[0];
+  else
+    *res = (0 + 1 + 2 + 3) - idx[0] - idx[1] - 3;
 
   return 0;
-} 
+}
 
-int ml_quartet(char ** name_map, int * u, int * res, ml_options * master_ml_options, double * M){
-  // option_t tmp_options;
-  char cq[GENERAL_BUFFER_SIZE];
-  double ll_p, ll_1, ll_2;
-  FILE * f, * p;
 
-  char stock_msa_name[] = "tmp.msa";
-  char stock_quartet_name[] = "tmp.quartet";
-  // char stock_msa_name = "tmp.msa";
+int do_quartet_ll(
+    char ** name_map, 
+    int * u, 
+    DIST_MOD distance_model, 
+    int * res, 
+    double * M)
+{
+  int i;
+  double ll[3], m;
+  char cq[GENERAL_BUFFER_SIZE], buf[GENERAL_BUFFER_SIZE];
+  FILE * f = fopen(STOCK_QUARTET_NAME, "r"); 
 
-  char * up = name_map[u[0]];
-  char * u1 = name_map[u[1]];
-  char * u2 = name_map[u[2]];
-  char * x = name_map[u[3]];
 
-  f = fopen(stock_msa_name, "w");
-  p = fopen(master_ml_options->input_alignment, "r");
-  // printf("hre-1, %s %s %s %s %s\n", up, u1, u2, x, master_ml_options->input_alignment);
-  while(fscanf(p, "%s", cq) >= 0){
-    // printf("curent is %s\n", sibling1);
-    if(!strcmp(&cq[1], up) || !strcmp(&cq[1], u1) || !strcmp(&cq[1], u2) || !strcmp(&cq[1], x)){
-      // printf("insderd %s\n", sibling1);
-      fprintf(f, "%s\n", cq);
-      fscanf(p, "%s", cq);
-      fprintf(f, "%s\n", cq);
-    } else 
-      fscanf(p, "%s", cq);
-  }
-  fclose(f);
-  fclose(p);
-
-  // Make subtree
-  f = fopen(stock_quartet_name, "r"); 
   if(f){
     fclose(f);
-    PRINT_AND_RETURN("tmp.quartet already exits in working directory\n", GENERAL_ERROR);
-  } 
-
-  // tmp_options.output_name = NULL;
-  // tmp_options.input_name = stock_msa_name;
- //    tmp_options.tree_names = malloc(sizeof(char *));
- //    tmp_options.tree_names[0] = stock_quartet_name;
-
-  // parent 
-  sprintf(cq, "((%s,%s),(%s,%s));\n((%s,%s),(%s,%s));\n((%s,%s),(%s,%s));\n", up, x, u1, u2,  u1, x, up, u2,  u2, x, u1, up);
-  get_ll_from_raxml(
-    master_ml_options->distance_model,
-    stock_quartet_name,
-    stock_msa_name,
-    NULL, 
-    cq, 
-    &ll_p, 
-    &ll_1, 
-    &ll_2
-  );  
-  // sprintf(cq, "((%s,%s),(%s,%s));\n", u1, x, up, u2);
-  // get_ll_from_raxml(&tmp_options, master_ml_options, cq, &ll_1); 
-
-  // sprintf(cq, "((%s,%s),(%s,%s));\n", u2, x, u1, up);
-  // get_ll_from_raxml(&tmp_options, master_ml_options, cq, &ll_2);
-  // printf("%lf\n", ll_p);
-  // while(1);
-
-
-  if(ll_p - ll_1 > -EPS && ll_p - ll_2 > -EPS){
-    *res = 0;
-    *M = 1.0 / (1.0 + exp(1ll * (-ABS(ll_p - ll_1))) + exp(1ll * (-ABS(ll_p - ll_2))));
-  } else if (ll_1 - ll_p > -EPS && ll_1 - ll_2 > -EPS){
-    *res = 1;
-    *M = 1.0 / (1.0 + exp(1ll * (-ABS(ll_1 - ll_p))) + exp(1ll * (-ABS(ll_1 - ll_2))));
-  } else {
-    *res = 2;
-    *M = 1.0 / (1.0 + exp(1ll * (-ABS(ll_2 - ll_1))) + exp(1ll * (-ABS(ll_2 - ll_p))));
+    ASSERT(GENERAL_ERROR, W_TMP_Q_EXIST, 0);
   }
+
+  STR_CLR(cq);
+  for(i = 0; i < 3; ++i){
+    sprintf(
+        buf,
+        "((%s,%s),(%s,%s))\n", 
+        name_map[u[i]], 
+        name_map[u[3]], 
+        name_map[u[(i + 1) % 3]], 
+        name_map[u[(i + 2) % 3]]
+    );
+    strcat(cq, buf);
+  }
+
+  FCAL(
+      GENERAL_ERROR,
+      F_GET_LL_IN_DO_Q_LL,
+      get_ll_from_raxml(
+          distance_model,
+          STOCK_QUARTET_NAME,
+          STOCK_MSA_NAME,
+          NULL, 
+          cq, 
+          ll
+      )
+  );
+
+  m = -1e9;
+  for(i = 0; i < 3; ++i)
+    if(ll[i] - m > -EPS){
+      m = ll[i]; 
+      *res = i;
+      *M = 1.0 / 
+          (1.0 + exp(1ll * (-ABS(ll[i] - ll[(i + 1) % 3]))) +
+          exp(1ll * (-ABS(ll[i] - ll[(i + 2) % 3]))));
+    }
+
   if(*M < 0.001) *M = 0.001;
   *M = 1.0/(*M);
-  // if(*M < 0.001) *M = 0.001;
-  // printf("checking , p %lf, 1 %lf, 2 %lf, res %d M %lf\n", ll_p, ll_1, ll_2, *res, *M);
 
-  system("rm tmp.msa");
-
-  // while(1);s
   return 0;
 }
