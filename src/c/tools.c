@@ -94,10 +94,11 @@ int constraint_inc(int argc, ml_options * master_ml_options){
   return 0;
 }
 
-int make_constraint_trees_from_disjoint_subsets(int n, 
-                                                msa_t * msa,  
-                                                int ** disjoint_subset, 
-                                                ml_options * master_ml_options)
+int make_constraint_trees_from_disjoint_subsets(
+    int n, 
+    msa_t * msa,  
+    int ** disjoint_subset, 
+    ml_options * master_ml_options)
 {
   int i, j;
   FILE * f;
@@ -237,6 +238,7 @@ int make_fasttree_constraint(
           out_name
       )
   );
+
   if(clear_lab)
     FCAL(
         GENERAL_ERROR, 
@@ -464,12 +466,11 @@ int subset_job(char * in_tree, char * out_path, int ss_size, char * in_aln)
   SYSCAL(
       GENERAL_ERROR,
       ERR_SUBSET,
-      "%s -t %s -o %s -n %d -i %s", 
+      "%s -t %s -o %s -n %d", 
       build_subsets_bin,
       in_tree,
       out_path,
-      ss_size,
-      in_aln
+      ss_size
   );
   return 0;
 }
@@ -657,17 +658,18 @@ int raxml_with_quartet_tree_job(DIST_MOD dist_model,
 }
 
 
-int distance_matrix_job(DIST_MOD dist_model, char * in_aln, char * out_path){
-  // char cwd[PATH_MAX];
-
-  // getcwd(cwd, sizeof(cwd));
-
+int distance_matrix_job(
+    char * tmp_folder, 
+    DIST_MOD dist_model, 
+    char * in_aln, 
+    char * out_path)
+{
   SYSCAL(
       GENERAL_ERROR,
       ERR_DIST_1,
-      "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%s; Quit;\" | %s -n;",
+      "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%s/%s; Quit;\" | %s -n;",
       in_aln, 
-      // cwd, 
+      tmp_folder, 
       TMP_FILE1,
       PAUP_bin
   );
@@ -675,9 +677,9 @@ int distance_matrix_job(DIST_MOD dist_model, char * in_aln, char * out_path){
   SYSCAL(
       GENERAL_ERROR,
       ERR_DIST_2,
-      "echo \"exe %s; DSet distance=%s; SaveDist format=RelPHYLIP"\
+      "echo \"exe %s/%s; DSet distance=%s; SaveDist format=RelPHYLIP"\
                         " file=%s triangle=both diagonal=yes; Quit;\" | %s -n",
-      // cwd,
+      tmp_folder,
       TMP_FILE1,
       dist_model == D_JC ? NJ_JC : NJ_LOGDET,
       out_path,

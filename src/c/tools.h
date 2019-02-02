@@ -142,6 +142,7 @@ extern int raxml_with_quartet_tree_job(
 
 
 extern int distance_matrix_job(
+    char * tmp_folder,
     DIST_MOD dist_model, 
     char * in_aln, 
     char * out_path
@@ -251,7 +252,7 @@ static const char RAXML_JC[]
 static const char FT_GTRGAMMA[]     
   = "-gtr -gamma";
 static const char FT_JC[]           
-  = "";   
+  = " ";   
 static const char NJ_LOGDET[]     
   = "logDet";
 static const char NJ_JC[]           

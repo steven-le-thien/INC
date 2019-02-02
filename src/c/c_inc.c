@@ -39,7 +39,7 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
   meta.master_ml_options = master_ml_options;
 
   // Parse options
-  printf(STATE_PASTA_DEC);
+  printf(STATE_RD_OPTIONS_IN_CINC);
   FCAL(
       GENERAL_ERROR,
       F_RD_CMD_ARG_IN_CINC,
@@ -127,7 +127,6 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
 
 int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
   int i, j; //loop counter
-
   // Init voting structure
   VOTE_GRP    vote;
   printf(ITER_COUNT);
@@ -223,8 +222,6 @@ int main(int argc, char ** argv){
 
   return 0;
 } 
-
-
-
-
 #endif
+
+

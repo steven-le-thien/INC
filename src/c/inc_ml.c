@@ -12,8 +12,8 @@
 #include "msa.h"
 
 // Some extern initialization
-char TMP_FILE1[]                = "tool_tmp_file1";
-char TMP_FILE2[]                = "tool_tmp_file2";
+char TMP_FILE1[]                = "./tool_tmp_file1";
+char TMP_FILE2[]                = "./tool_tmp_file2";
 
 // Internal functions
 int set_up_trees_to_inc(ml_options * master_ml_options, int * num_ctree);
@@ -156,7 +156,7 @@ int make_constraint_trees(int * num_ctree,  ml_options  * master_ml_options){
             &msa, 
             master_ml_options->input_alignment
           )
-      );    
+      );   
   }
 
   *num_ctree = 0;
@@ -222,9 +222,9 @@ int make_constraint_trees(int * num_ctree,  ml_options  * master_ml_options){
 
         FCAL(
             GENERAL_ERROR, 
-            F_ITREE_IN_MAIN,
+            F_CTREE_IN_MAIN,
             ctree_job(
-                master_ml_options->ctree_method ? in_name : msa_name,
+                master_ml_options->ctree_method == C_SUBTREE ? in_name : msa_name,
                 out_name,
                 master_ml_options,
                 1
@@ -234,6 +234,7 @@ int make_constraint_trees(int * num_ctree,  ml_options  * master_ml_options){
       (*num_ctree)++;
     }
   }
+
   return 0;
 }
 
@@ -262,6 +263,7 @@ int set_up_dist(ml_options * master_ml_options){
           GENERAL_ERROR,
           F_DIST_MAT_IN_MAIN,
           distance_matrix_job(
+              master_ml_options->tmp_folder,
               master_ml_options->distance_model, 
               master_ml_options->input_alignment,
               master_ml_options->init_d_name

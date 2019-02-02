@@ -105,6 +105,7 @@ typedef struct lca_t{
 } LCA_T;
 
 typedef struct ml_options{
+  char * tmp_folder;
   char * input_alignment;   // currently only accepts path
   char * output_prefix;    // currently only accepts path
   char * init_tree_name;   // currently only accepts path 
@@ -211,8 +212,6 @@ typedef struct s_edge{
 } S_EDGE;
 
 typedef struct vote{
-  BT * tree;
-
   // WARNING: redo initialization if the struct changes
   S_EDGE valid_st;    // the valid 'component', indexed in growing tree 
               // scheme
@@ -230,6 +229,7 @@ typedef struct vote{
 
   S_EDGE ins;      // insertion edge (edge with the most vote), 
               // this follws the growing tree's indexing scheme
+  BT * tree;
 
   int   ctree_idx; 
 } VOTE_GRP;
@@ -379,6 +379,9 @@ static const char F_BFS_VOTE_IN_CINC[]
 
 static const char F_ATTACH_IN_CINC[]
   = "attaching leaves failed in constraint inc\n";
+
+static const char STATE_RD_OPTIONS_IN_CINC[]
+  = "reading cmd_args in cinc...\n";
 
 // static const char STATE_NO_DIST[] 
 //   = "without distance matrix...\n";

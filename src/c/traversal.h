@@ -12,10 +12,36 @@
 #define IS_REVOTING 1
 #define NO_REVOTING 0
 
-extern int init_vote(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int i);
-extern int find_bipartition(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote, int i);
-extern int find_valid_subtree(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote);
-extern int bfs_vote(INC_GRP * meta,  MAP_GRP * map,MST_GRP * mst, VOTE_GRP * vote, int i);
+extern int init_vote(
+    INC_GRP * meta, 
+    MAP_GRP * map, 
+    MST_GRP * mst, 
+    VOTE_GRP * vote, 
+    int i
+);
+
+extern int find_bipartition(
+    INC_GRP * meta, 
+    MAP_GRP * map, 
+    MST_GRP * mst, 
+    VOTE_GRP * vote, 
+    int i
+);
+
+extern int find_valid_subtree(
+    INC_GRP * meta, 
+    MAP_GRP * map, 
+    MST_GRP * mst, 
+    VOTE_GRP * vote
+);
+
+extern int bfs_vote(
+    INC_GRP * meta,  
+    MAP_GRP * map,
+    MST_GRP * mst, 
+    VOTE_GRP * vote, 
+    int i
+);
 
 static const char F_FPM_IN_BFS[]
   = "fpm failed in bfs\n";

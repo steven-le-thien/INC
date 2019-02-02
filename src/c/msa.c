@@ -20,14 +20,13 @@ int subset_msa(char * infile, char * outfile, msa_t * msa){
   char taxon_name[MAX_NAME_SIZE];
 
   msa_t sub_msa;
-
   sprintf(taxon_name, "%s_tmp", outfile);
+
   FCAL(
       GENERAL_ERROR,
       F_WRITE_SUB_MSA_IN_SUBSET_MSA,
       write_sub_msa(infile, taxon_name, msa)
   );
-
   FCAL(
       GENERAL_ERROR,
       F_PARSE_INPUT_IN_SUBSET_MSA,
@@ -280,17 +279,21 @@ int init_msa(msa_t* msa, int N, int num_seq, char** msa_core, char** msa_name){
 int write_sub_msa(char * infile, char * taxon_name, msa_t * msa){
   FILE *f, *p;
   int i;
+  char buf[GENERAL_BUFFER_SIZE];
 
   f = SAFE_FOPEN_RD(infile);
   p = fopen(taxon_name, "w"); 
 
-  while(fscanf(f, "%s", taxon_name) >= 0)
-    for(i = 0; i < msa->num_seq; i++)
-      if(strcmp(taxon_name, msa->name[i]) == 0)
-        fprintf(p, ">%s\n%s\n", taxon_name, msa->msa[i]);
+  while(fscanf(f, "%s", buf) >= 0){
+    for(i = 0; i < msa->num_seq; i++){
+      if(strcmp(buf, msa->name[i]) == 0){
+        fprintf(p, ">%s\n%s\n", buf, msa->msa[i]);
+      }
+    }
+  }
+
   fclose(f);
   fclose(p);
-
 
   return 0;
 }

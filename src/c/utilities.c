@@ -33,7 +33,7 @@ FILE* safe_reopen_read(char * name, FILE * stream)
   if(!name) return NULL;
   FILE * f = freopen(name, "r", stream);
   if(!f) {
-    fprintf(stderr, "ReOpen error: %s\n", name);
+    fprintf(stderr, "ReOpen error: %s \n", name);
     exit(EXIT_FAILURE);
   }
   else return f;

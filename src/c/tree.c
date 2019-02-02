@@ -352,8 +352,11 @@ BT * tree_constructor(
     tree->degree[i] = 0; 
   }
 
-  memcpy(tree->degree, degree, n * sizeof(int));
-  memcpy(tree->master_idx_map, master_idx_map, n * sizeof(int));
+  if(degree)
+    memcpy(tree->degree, degree, n * sizeof(int));
+
+  if(master_idx_map)
+    memcpy(tree->master_idx_map, master_idx_map, n * sizeof(int));
 
   return tree;
 }

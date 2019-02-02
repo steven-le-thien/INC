@@ -44,7 +44,6 @@ int read_ml_cmd_arg(int argc, char ** argv, ml_options * ml_options){
       F_INIT_ML_OPT,
       init_ml_options(ml_options)
   ); 
-  
   ASSERT(
       GENERAL_ERROR,
       WRONG_ARG_FORMAT,
@@ -60,8 +59,9 @@ int read_ml_cmd_arg(int argc, char ** argv, ml_options * ml_options){
       ASSERT(
           GENERAL_ERROR,
           WRONG_ARG_FORMAT,
-          argv[1][0] != '-'
+          argv[1][0] == '-'
       );
+      
 
       // reading the first content, note that there may be a lot more contents 
       // to read
@@ -95,6 +95,7 @@ int read_ml_cmd_arg(int argc, char ** argv, ml_options * ml_options){
       F_PARSE_ML_ARG,
       parse_ml_arg(argv, flag_index, content_s, argc, ml_options)
   );
+
   return 0; 
 }
 
@@ -154,7 +155,11 @@ int parse_ml_arg(char ** argv,
   // -q: quartet tree type            (expect "fpm"/"subtree"/"raxml"/"ml")
   // -d: distance model               (expect "JC"/"logDet"/"K2P"/"P")
   // -s: max subset size              (expect a positive number)
+  // -p: tmp folder location          (expect a string)
   switch(flag[1]){   
+    case 'p':
+        ml_options->tmp_folder = argv[content_s];
+        break;
     case 'a':
         ml_options->input_alignment = argv[content_s];
       break;
@@ -224,7 +229,7 @@ int find_arg_index(char * flag,
   ASSERT(
       GENERAL_ERROR,
       WRONG_ARG_FORMAT,
-      flag[0] == 'i'
+      flag[0] == '-'
   );
 
   switch(flag[1]){

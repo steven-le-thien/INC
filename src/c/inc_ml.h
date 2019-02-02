@@ -8,7 +8,7 @@ static const char STATE_INIT_TREE[]
   = "cheking for initial tree...\n";
 
 static const char STATE_PASTA_DEC[] 
-  = "performing PASTA decomposition\n";
+  = "performing PASTA decomposition...\n";
 
 static const char STATE_DIST[]
   = "writing distance matrix using PAUP* to ";
@@ -85,6 +85,11 @@ static const char F_MAKE_CTREE_IN_SET_UP_TREE[]
 
 static const char F_ITREE_IN_MAIN[] 
   = "itree failed in main\n";
+
+
+static const char F_CTREE_IN_MAIN[] 
+  = "ctree failed in main\n";
+
 
 static const char F_DIST_MAT_IN_MAIN[]
   = "distance matrix failed in main\n";
