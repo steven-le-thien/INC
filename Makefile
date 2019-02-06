@@ -1,17 +1,24 @@
 
 CC := /usr/local/bin/gcc-8 -Wall -MP -MD -fopenmp
-SRC := src/c
+INCMLFLG := -D INC_ML_CMPL
+TESTFLG := -D TEST
+DIR := src/c
 
-SOURCES := $(wildcard $(SRC)/*.c)
-OBJECTS := $(patsubst $(SRC)/%.c,  $(SRC)/%.o, $(SOURCES))
+SPECCMPL := 
+
+SOURCES := $(wildcard $(DIR)/*.c)
+OBJECTS := $(patsubst $(DIR)/%.c,  $(DIR)/%.o, $(SOURCES))
+
+.PHONY: all clean
+all: SPECCMPL = -D INC_ML_CMPL
 
 all: $(OBJECTS)
-	$(CC) $^ -lm -o ml
+	$(CC) $(SPECCMPL) $^ -lm -o ml
 
-$(OBJ)/%.o: $(OBJECTS)
-	$(CC) -I$(SRC) -c $< -o $@
+$(DIR)/%.o: $(DIR)/%.c
+	$(CC) $(SPECCMPL) -I$(DIR) -c $< -o $@
 
 clean:
-	rm $(SRC)/*.o 
-	rm $(SRC)/*.d
+	rm $(DIR)/*.o 
+	rm $(DIR)/*.d
 	rm ml

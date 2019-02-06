@@ -21,6 +21,7 @@ int set_up_itree(ml_options * master_ml_options);
 int make_constraint_trees(int * num_ctree,  ml_options  * master_ml_options);
 int set_up_dist(ml_options * master_ml_options);
 
+#if INC_ML_CMPL
 int main(int argc, char ** argv){
   // Pipe in a bunch of programs together
   int         num_ctree;
@@ -54,6 +55,7 @@ int main(int argc, char ** argv){
 
   return 0; 
 }   
+#endif //INC_ML_CMPL
 
 int set_up_trees_to_inc(ml_options * master_ml_options, int * num_ctree){
   FCAL(

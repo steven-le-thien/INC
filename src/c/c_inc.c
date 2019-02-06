@@ -17,7 +17,6 @@
 #include "traversal.h"
 #include "fast_mst.h"
 
-#define COMPILE_ALONE 0
 #define SEED 12345
 
 int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst);
@@ -178,50 +177,3 @@ int init_meta_with_msa(msa_t * msa, INC_GRP * meta, MAP_GRP * map)
     map->master_to_name[i]  = msa->name[i];
   return 0;
 }
-
-
-// Driver for when the constraint inc is called without any 
-// constraint trees, using the default settings
-#if COMPILE_ALONE
-int main(int argc, char ** argv){
-  int i; //loop counter
-  ml_options options;
-
-  options.init_d_name        = malloc(sizeof(char) * GENERAL_BUFFER_SIZE);
-  options.init_d_name[0] = '\0';
-  for(i = 0; i < argc; i++)
-    if(strcmp(argv[i], "-i") == 0)
-      strcpy(options.init_d_name, argv[i + 1]); 
-    
-  options.output_prefix      = malloc(sizeof(char) * GENERAL_BUFFER_SIZE);
-  options.output_prefix[0] = '\0';
-  for(i = 0; i < argc; i++)
-    if(strcmp(argv[i], "-o") == 0) 
-      strcpy( options.output_prefix, argv[i + 1]);    
-
-  options.init_tree_name     = NULL;
-  options.input_alignment    = NULL;
-  options.guide_tree_name    = NULL;
-
-  options.use_constraint                     = -1; 
-  options.recompute_constraint_trees         = -1;    
-  options.use_subtree_for_constraint_trees   = -1;
-  options.use_raxml_for_constraint_trees     = -1;
-  options.use_fasttree_for_constraint_trees  = -1;
-
-  options.use_four_point_method_with_distance    = 1;
-  options.use_four_point_method_with_tree        = 0;
-  options.use_new_quartet_raxml                  = 0;
-  options.use_ml_method                          = 0;
-
-  options.distance_model                         = "logDet";
-  options.ss_threshold                           = -1;
-
-  if(constraint_inc_main(argc, argv, &options) != SUCCESS) 
-    PRINT_AND_EXIT("constraint_inc_main failed in main", GENERAL_ERROR);
-
-  return 0;
-} 
-#endif
-
-
