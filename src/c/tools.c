@@ -502,10 +502,11 @@ int rm_label_job(char * in_tree, char * out_path)
   return 0;
 }
 
-int raxml_job(DIST_MOD dist_model, 
-              char * out_pfx,    
-              char * in_seq,     
-              char * wd_sfx)
+int raxml_job(
+    DIST_MOD dist_model, 
+    char * out_pfx,    
+    char * in_seq,     
+    char * wd_sfx)          
 {
   // TODO: add length checking
 
@@ -538,10 +539,12 @@ int raxml_job(DIST_MOD dist_model,
 }
 
 // This also deletes the initial tree 
-int raxml_with_initial_tree_job(DIST_MOD dist_model,
-                                char * out_pfx,
-                                char * in_aln,
-                                char * out_dir){
+int raxml_with_initial_tree_job(
+    DIST_MOD dist_model,
+    char * out_pfx,
+    char * in_aln,
+    char * out_dir)                            
+{
   FCAL(
       GENERAL_ERROR,
       F_FFT_IN_RAXML_W_INIT,
@@ -578,12 +581,13 @@ int raxml_with_initial_tree_job(DIST_MOD dist_model,
   return 0; 
 }
 
-int get_ll_from_raxml(DIST_MOD dist_model,
-                      char * out_pfx,
-                      char * in_aln,
-                      char * out_dir, 
-                      char * constraint_quartet, 
-                      double* ll)
+int get_ll_from_raxml(
+    DIST_MOD dist_model,
+    char * out_pfx,
+    char * in_aln,
+    char * out_dir, 
+    char * constraint_quartet, 
+    double* ll)
 {
   FILE * f; 
   char tmp[GENERAL_BUFFER_SIZE];
@@ -616,11 +620,13 @@ int get_ll_from_raxml(DIST_MOD dist_model,
   return 0;
 }
 
-int raxml_with_quartet_tree_job(DIST_MOD dist_model,
-                                char * out_pfx,
-                                char * in_aln,
-                                char * out_dir,
-                                char * constraint_quartet){
+int raxml_with_quartet_tree_job(
+    DIST_MOD dist_model,
+    char * out_pfx,
+    char * in_aln,
+    char * out_dir,
+    char * constraint_quartet)
+{
   FILE * f;
 
   f = fopen(TMP_FILE1, "w"); // this will overwrite tmp.fast
@@ -698,10 +704,12 @@ int distance_matrix_job(
 
 // Internal functions
 
-int find_prefix_and_dir_from_path(char * path, 
-                                  char * prefix, 
-                                  char * dir, 
-                                  char * name){
+int find_prefix_and_dir_from_path(
+    char * path, 
+    char * prefix, 
+    char * dir, 
+    char * name)
+{                              
   int i, j;
   // Malloc sequence, assuming path is created
   ASSERT(GENERAL_ERROR, N_PATH_IN_FIND_PFX_DIR, path);

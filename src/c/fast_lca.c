@@ -66,10 +66,10 @@ int fpm_on_tree(LCA_T * LCA, int * u, int * ret){
   sum1 = pu2 + u1x;
   sum2 = pu1 + u2x;
 
-  if(sump - sum1 < -0.000000000001 && sump - sum2 < -0.000000000001)
+  if(sump - sum1 < -EPS && sump - sum2 < -EPS)
     *ret = 0;
   else{
-    if(sum1 - sum2 < -0.000000000001)
+    if(sum1 - sum2 < -EPS)
       *ret = 1;
     else 
       *ret = 2;

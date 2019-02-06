@@ -105,10 +105,6 @@
 #define MIN(a, b)\
     ((a) < (b) ? (a) : (b))
 
-#ifndef INT_MAX
-#define INT_MAX 10000000
-#endif 
-
 #define LN2 1.4426950408
 #define EPS 1e-7              
 #define POWER(a, b)\
@@ -132,10 +128,9 @@
 // VARS 
 char sys_buf[GENERAL_BUFFER_SIZE];
 
-
 // Files generics
-extern char TMP_FILE1[];            //    = "tool_tmp_file1";
-extern char TMP_FILE2[];             //   = "tool_tmp_file2";
+extern char TMP_FILE1[];
+extern char TMP_FILE2[];
 
 extern void * safe_malloc(size_t size);
 extern FILE * safe_open_read(char * name);

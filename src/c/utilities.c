@@ -5,6 +5,10 @@
 
 #include "utilities.h"
 
+// 
+char TMP_FILE1[] = "tool_tmp_file1";
+char TMP_FILE2[] = "tool_tmp_file2";
+
 // Jim Baiter's 
 void* safe_malloc(size_t n)
 {
