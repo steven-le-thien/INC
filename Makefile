@@ -9,16 +9,18 @@ SPECCMPL :=
 SOURCES := $(wildcard $(DIR)/*.c)
 OBJECTS := $(patsubst $(DIR)/%.c,  $(DIR)/%.o, $(SOURCES))
 
-.PHONY: all clean
-all: SPECCMPL = -D INC_ML_CMPL
+.PHONY: ml inc clean
+ml: SPECCMPL = -D INC_ML_CMPL
+inc: SPECCMPL = -D INC_CMPL 
 
-all: $(OBJECTS)
-	$(CC) $(SPECCMPL) $^ -lm -o ml
+ml inc: $(OBJECTS)
+	$(CC) $(SPECCMPL) $^ -lm -o $@
 
 $(DIR)/%.o: $(DIR)/%.c
 	$(CC) $(SPECCMPL) -I$(DIR) -c $< -o $@
 
 clean:
-	rm $(DIR)/*.o 
-	rm $(DIR)/*.d
-	rm ml
+	rm -f $(DIR)/*.o 
+	rm -f $(DIR)/*.d
+	rm -f ml
+	rm -f inc

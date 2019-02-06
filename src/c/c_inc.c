@@ -90,7 +90,7 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
       F_PARSE_TREE_IN_CINC,
       parse_tree(&meta, &map, master_ml_options)
   );
-  
+
   // Initialize growing tree using the first 3 taxa in the ordering
   printf(STATE_INIT_GTREE);
   FCAL(
@@ -177,3 +177,71 @@ int init_meta_with_msa(msa_t * msa, INC_GRP * meta, MAP_GRP * map)
     map->master_to_name[i]  = msa->name[i];
   return 0;
 }
+
+#if INC_CMPL
+
+char F_MAIN[] = "inc failed in main\n";
+
+// Commands are of the form inc -i <distance_matrix> -o <output_path>
+int main(int argc, char ** argv){
+  int i;
+  int argc_in = 5; 
+  char * argv_in[argc_in];
+  ml_options master_ml_options;
+
+  // There should be an odd number of arguments
+  ASSERT(
+      GENERAL_ERROR, 
+      F_RD_CMD_ARG_IN_CINC,
+      argc % 2 == 1
+  );
+
+  FCAL(
+      GENERAL_ERROR,
+      F_INIT_ML_OPT,
+      init_ml_options(&master_ml_options)
+  ); 
+
+  // Parse user input
+  for(i = 1; i < argc; i += 2){ // ignore the first word
+    ASSERT(
+        GENERAL_ERROR,
+        F_RD_CMD_ARG_IN_CINC,
+        argv[i][0] == '-'
+    );
+
+    switch(argv[i][1]){
+      case 'i':
+        master_ml_options.init_d_name = argv[i + 1]; 
+        argv_in[1] = argv[i];
+        argv_in[2] = argv[i + 1];
+        break;
+      case 'o':
+        master_ml_options.output_prefix = argv[i + 1];
+        argv_in[3] = argv[i];
+        argv_in[4] = argv[i + 1];
+        break;
+      default:
+        break;
+    }
+  }
+
+  argv[0] = NULL;
+
+  master_ml_options.qtree_method = Q_FPM;
+
+  FCAL(
+      GENERAL_ERROR,
+      F_MAIN,
+      constraint_inc_main(
+          argc_in,
+          argv_in,
+          &master_ml_options
+      )
+  );
+
+  return 0;
+}
+
+
+#endif //INC_CMPL

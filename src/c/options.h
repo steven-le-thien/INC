@@ -8,6 +8,8 @@
 // Functions
 extern int read_cmd_arg(int argc,char ** argv, ml_options * options);
 extern int read_ml_cmd_arg(int argc,char ** argv, ml_options * options);
+extern int init_ml_options(ml_options * options);
+
 
 static const char WRONG_ARG_FORMAT[]
   = "wrong argument format, please check your commands\n";

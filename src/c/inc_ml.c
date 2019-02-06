@@ -12,8 +12,8 @@
 #include "msa.h"
 
 // Some extern initialization
-char TMP_FILE1[]                = "./tool_tmp_file1";
-char TMP_FILE2[]                = "./tool_tmp_file2";
+char TMP_FILE1[]                = "tool_tmp_file1";
+char TMP_FILE2[]                = "tool_tmp_file2";
 
 // Internal functions
 int set_up_trees_to_inc(ml_options * master_ml_options, int * num_ctree);

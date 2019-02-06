@@ -16,7 +16,6 @@ int find_arg_index(
     int argc, 
     char ** argv);
 
-int init_ml_options(ml_options * options);
 int parse_ml_arg(
     char ** argv, 
     int flag_index, 
@@ -175,7 +174,7 @@ int parse_ml_arg(char ** argv,
     case 'm':
         ml_options->init_d_name = argv[content_s];
       break;
-    case 'r':
+    case 'r': 
         ml_options->recompute_constraint_trees = argv[content_s][0] - '0';
       break;
     case 'c':
@@ -288,8 +287,8 @@ int init_ml_options(ml_options * ml_options){
 
   ml_options->recompute_constraint_trees          = 1;
   ml_options->itree_method                        = I_FASTTREE;
-  ml_options->ctree_method                        = C_SUBTREE;
-  ml_options->qtree_method                        = Q_SUBTREE;
+  ml_options->ctree_method                        = C_FASTTREE;
+  ml_options->qtree_method                        = Q_FPM;
   ml_options->distance_model                      = D_LOGDET;
 
   ml_options->ss_threshold                            = -1;

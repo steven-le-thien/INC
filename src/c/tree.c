@@ -92,6 +92,7 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, ml_options * options){
     }
   } else meta->n_ctree = options->num_trees;
  
+  // printf("wda %d\n", options->num_trees);
 
   // Malloc sequence
   meta->ctree             = SAFE_MALLOC(meta->n_ctree * sizeof(BT *));

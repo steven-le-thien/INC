@@ -685,6 +685,14 @@ int distance_matrix_job(
       out_path,
       PAUP_bin
   );
+
+  SYSCAL(
+      GENERAL_ERROR,
+      ERR_RM,
+      "rm %s/%s",
+      tmp_folder,
+      TMP_FILE1
+  );
   return 0;
 }
 
