@@ -19,7 +19,7 @@ If you want to use the maximum likelihood extension of constraint INC then the f
 5. RAxML (only if needed to run RAxML)
 
 ## Installation
-Run `make` to generate the binary `ml`, used for INC-ML. The command for INC-ML is 
+Run `make ml` to generate the binary `ml`, used for INC-ML. The command for INC-ML is 
 ```
 ml -a <input_alignment> -o <output_prefix> -t <initial_tree> -r <recompute_constraint_trees> 
    -d <distance_type> -n <approx_constraint_tree_size> -i <init_tree_method> -c <constraint_tree_method> 
@@ -35,6 +35,12 @@ If you only want to run INC, which is described in the original paper by Zhang, 
 ```
 inc -i <input_distance_matrix> -o <output_prefix>
 ```
+
+If you only want to run constraint INC, which is also desrcibed in the original paper and takes in an additional set of constraint trees, you can comple the binary `constraint_inc` by running `make constraint_inc`. The command for constraint INC is
+```
+constraint_inc -i <input_distance_matrix> -o <output_prefix> -q <quartet_method> -g <guide_tree> -t <constraint_tree1> <constraint_tree2> <constraint_tree3> ... 
+```
+The `-i`, `-o` and `-q` flag is compulsory. `-i` and `-o` takes the full path. `-q` takes either `subtree` or `fpm` which corresponds to using subtree of some guide tree as quartets versus using distance matrix and four point condition to determine the correct quartet topology. If `-q` is `subtree`, then `-g` is also compulsory and must be the full path containing the guide tree. If `-q` is `fpm` then any value into `-g` is ignored.
 
 ## INC_ML options
 1. `-a` specifies input alignment. Please specify the full path.
