@@ -138,11 +138,12 @@ int make_constraint_trees_from_disjoint_subsets(
   return 0;
 }
 
-int make_unweighted_matrix(char * in_tree, 
-                            char * output_prefix, 
-                            float ** dm, 
-                            char ** name_map, 
-                            int * master_to_midx)
+int make_unweighted_matrix(
+    char * in_tree, 
+    char * output_prefix, 
+    float ** dm, 
+    char ** name_map, 
+    int * master_to_midx)                        
 {
   FILE * f;
   char output_name[GENERAL_BUFFER_SIZE];
@@ -185,9 +186,10 @@ int make_unweighted_matrix(char * in_tree,
   return 0;
 }
 
-int make_subset_label(char * tree_name, 
-                      char * out_name, 
-                      ml_options * master_ml_options)
+int make_subset_label(
+    char * tree_name, 
+    char * out_name, 
+    ml_options * master_ml_options)                  
 {
   FCAL(
       GENERAL_ERROR,

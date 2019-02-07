@@ -9,11 +9,12 @@ SPECCMPL :=
 SOURCES := $(wildcard $(DIR)/*.c)
 OBJECTS := $(patsubst $(DIR)/%.c,  $(DIR)/%.o, $(SOURCES))
 
-.PHONY: ml inc clean
+.PHONY: ml inc constraint_inc clean
 ml: SPECCMPL = -D INC_ML_CMPL
 inc: SPECCMPL = -D INC_CMPL 
+constraint_inc: SPECCMPL = -D CINC_CMPL
 
-ml inc: $(OBJECTS)
+ml inc constraint_inc: $(OBJECTS)
 	$(CC) $(SPECCMPL) $^ -lm -o $@
 
 $(DIR)/%.o: $(DIR)/%.c
@@ -24,3 +25,4 @@ clean:
 	rm -f $(DIR)/*.d
 	rm -f ml
 	rm -f inc
+	rm -f constraint_inc

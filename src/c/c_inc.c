@@ -178,6 +178,12 @@ int init_meta_with_msa(msa_t * msa, INC_GRP * meta, MAP_GRP * map)
   return 0;
 }
 
+
+///////////////////
+//  Main function for INC (Zhang, Rao, Warnow)
+//
+//
+/////////////////
 #if INC_CMPL
 
 char F_MAIN[] = "inc failed in main\n";
@@ -245,3 +251,99 @@ int main(int argc, char ** argv){
 
 
 #endif //INC_CMPL
+
+
+///////////////////
+//  Main function for cosntraint INC (Zhang, Rao, Warnow)
+//  Commands are of the form inc -i <distance_matrix> -o <output_path> 
+//      -t <trees>.. -q <quartet_type> -g <guide_tree>
+//  where -q is either `fpm' or `subtree' and -g must be provided if it is 
+//  quartet type is `subtree'
+//
+/////////////////
+#if CINC_CMPL
+char F_MAIN[] = "cinc failed in main\n";
+char F_ARGC_TOO_MANY[] = "too many arguments in the command\n";
+char F_SUBTREE_NO_GUIDE[] = "using subtree quartet trees without guide tree\n";
+
+int main(int argc, char ** argv){
+  int argc_in; // capped at 10000 arguments
+  char * argv_in[MAX_NUM_FLAG];
+  int i, guide_tree_idx;
+  ml_options master_ml_options;
+
+  // Prepare master_ml_options
+  FCAL(
+      GENERAL_ERROR,
+      F_INIT_ML_OPT,
+      init_ml_options(&master_ml_options)
+  ); 
+
+  // Check if subtree or fpm
+  for(i = 0; i < argc; i++){
+    if(argv[i][0] == '-' && argv[i][1] == 'q'){
+      if(STR_EQ(argv[i + 1], "subtree"))
+        master_ml_options.qtree_method = Q_SUBTREE;
+      else if(STR_EQ(argv[i + 1], "fpm"))
+        master_ml_options.qtree_method = Q_FPM;
+      else{
+        printf("wrong flag inputted into -q\n");
+        return 0;
+      }
+    }
+  }
+
+  // If it is subtree then make sure that there is a guide tree that follows
+  if(master_ml_options.qtree_method == Q_SUBTREE){
+    for(i = 0; i < argc; i++)
+      if(argv[i][0] == '-' && argv[i][1] == 'g')
+        master_ml_options.guide_tree_name = argv[i + 1];
+
+    ASSERT(GENERAL_ERROR, F_SUBTREE_NO_GUIDE, master_ml_options.guide_tree_name);
+
+    for(guide_tree_idx = 0; guide_tree_idx < argc; guide_tree_idx++){
+      if(argv[guide_tree_idx][0] == '-' && argv[guide_tree_idx][1] == 'g'){
+        guide_tree_idx++;
+        break;
+      }
+    }
+  }
+
+  // Set up argc_in and argv_in
+  ASSERT(
+      GENERAL_ERROR,
+      F_ARGC_TOO_MANY,
+      argc < MAX_NUM_FLAG
+  );
+  argc_in = 1;
+  argv_in[0] = NULL;
+  for(i = 1; i < argc; i++){
+    if(STR_EQ(argv[i], "-q") || STR_EQ(argv[i], "-g"))
+      i++; //skip these flags
+    else if(master_ml_options.qtree_method == Q_SUBTREE && 
+          STR_EQ(argv[i - 1], "-t"))
+      argv_in[argc_in++] = argv[guide_tree_idx];
+    else
+      argv_in[argc_in++] = argv[i];
+  }
+
+  // Prepare argv to pass into
+  argv[0] = NULL;
+  FCAL(
+      GENERAL_ERROR,
+      F_MAIN,
+      constraint_inc_main(
+          argc_in,
+          argv_in,
+          &master_ml_options
+      )
+  );
+
+  return 0;
+}
+
+#endif // CINC_CMPL
+
+
+
+

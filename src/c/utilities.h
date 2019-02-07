@@ -19,6 +19,8 @@
 
 #define MAX_FLAG_SZ 50
 
+#define MAX_NUM_FLAG 10000
+
 // Error values
 #define GENERAL_ERROR -1
 #define MALLOC_ERROR -2

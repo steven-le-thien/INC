@@ -108,8 +108,8 @@ int read_cmd_arg(int argc, char ** argv, ml_options * ml_options){
   int i;
 
   // Loop through command
-  for(i = 0; i < argc; i++)
-    if(i != 0 && i % 2) //currently reading a flag
+  for(i = 1; i < argc; i++)
+    if(argv[i][0] == '-') //currently reading a flag
       FCAL(
           GENERAL_ERROR, 
           F_FIND_ARG_INC_OPT, 
@@ -216,12 +216,13 @@ int parse_ml_arg(char ** argv,
  * Output   0 on success, ERROR otherwise
  * Effect   set fields in option struct
  */
-int find_arg_index(char * flag, 
-                    char * content, 
-                    ml_options * options, 
-                    int * i, 
-                    int argc, 
-                    char ** argv)
+int find_arg_index(
+    char * flag, 
+    char * content, 
+    ml_options * options, 
+    int * i, 
+    int argc, 
+    char ** argv)                
 {
   int j;
 
