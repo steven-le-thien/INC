@@ -1,5 +1,8 @@
 
-CC := gcc -Wall -MP -MD -fopenmp
+ifeq ($(strip $(CC)),)
+CC := gcc
+endif
+CC += -Wall -MP -MD -fopenmp
 INCMLFLG := -D INC_ML_CMPL
 TESTFLG := -D TEST
 DIR := src/c
