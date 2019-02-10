@@ -1,5 +1,5 @@
 
-CC := /usr/local/bin/gcc-8 -Wall -MP -MD -fopenmp
+CC := gcc -Wall -MP -MD -fopenmp
 INCMLFLG := -D INC_ML_CMPL
 TESTFLG := -D TEST
 DIR := src/c
