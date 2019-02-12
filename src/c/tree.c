@@ -107,6 +107,16 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, ml_options * options){
     map->master_to_gidx[i]      = -1;        
   }
 
+  // Sanitize 
+  for(i = 0; i < meta->n_ctree; i++){
+    // printf("%s\n", options->tree_names[i]);
+    FCAL(
+        GENERAL_ERROR, 
+        F_RM_LBL_IN_MK_FT_CONSTRAINT,
+        rm_label_job(options->tree_names[i], options->tree_names[i])
+    );
+  }
+
   // Call the newick reader
   for(i = 0; i < meta->n_ctree; i++){
     if(meta->master_ml_options->qtree_method == Q_SUBTREE)
