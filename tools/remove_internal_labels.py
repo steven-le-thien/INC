@@ -1,4 +1,4 @@
-#!/Users/lethien_96/anaconda/bin/python
+#!/usr/bin/python
 
 import argparse
 import dendropy
