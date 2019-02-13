@@ -28,13 +28,14 @@ int four_point_method(float ** d, int * u, int * res){
   int i;
   float tmp, m = 1e9;
 
-  for(i = 1; i < QUAD; i++){
-    tmp = d[u[0]][u[i]] + (i == 2) ? d[u[1]][u[3]] : d[u[2]][u[4 - i]];
-    if(m < tmp){
+  for(i = 0; i < 3; i++){
+    tmp = d[u[i]][u[3]] + ((i == 1) ? d[u[0]][u[2]] : d[u[1]][u[2 - i]]);
+    if(m > tmp){
       m = tmp;
-      *res = i % 3;
+      *res = i;
     }
   }
+
   return 0;
 }
 

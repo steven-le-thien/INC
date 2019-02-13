@@ -61,6 +61,7 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
           F_PARSE_INPUT_IN_CINC,
           parse_input(&msa, meta.master_ml_options->input_alignment)
       );
+
       FCAL(
           GENERAL_ERROR,
           F_INIT_META_IN_CINC,
@@ -81,6 +82,8 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
         F_PARSE_INIT_AS_MST_IN_CINC,
         parse_initial_tree_as_mst(&meta, &mst)
     );
+
+
 
   // At this stage, all tree names should be in options->tree_name. 
   // It should be ok to parse them all at once since together they 

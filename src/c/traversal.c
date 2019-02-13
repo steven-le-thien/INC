@@ -351,6 +351,7 @@ int bfs_vote(
     return 0;
   }
   vote->tree = meta->gtree;
+  
   FCAL(
       GENERAL_ERROR,
       F_BFS_VOTE_IMPL_IN_BFS_VOTE,
@@ -851,17 +852,17 @@ int do_quartet(
 
     if(quartet_result == 0)  // parent wins
       for(i = 0; i < 2; i++)
-        itrnl_vote[get_edge_master_idx(tree, cur, adj_idx_a[PAR_OFFSET])] 
+        itrnl_vote[get_edge_master_idx(tree, cur, adj_idx_a[i + CHILD_OFFSET])] 
             -= POWER(1.0 / M, revote_power);
     for(i = 0; i < NUM_CHILD; i++)
       if(quartet_result == i + CHILD_OFFSET)
         itrnl_vote[get_edge_master_idx(tree, cur, adj_idx_a[i + CHILD_OFFSET])]
-            -= POWER(1.0 / M, revote_power);
+            += POWER(1.0 / M, revote_power);
   }
 
   for(i = 0; i < 2; i++){
     nex_idx = get_edge_master_idx(tree, cur, adj_idx_a[i + CHILD_OFFSET]);
-    if(revote_map[nex_idx] && itrnl_vote[0] - (*max_vote) > EPS){
+    if(revote_map[nex_idx] && itrnl_vote[nex_idx] - (*max_vote) > EPS){
         (*max_vote) = itrnl_vote[nex_idx];
         vote->ins.c = get_adj(tree, cur, adj_idx_a[i + CHILD_OFFSET]);
         vote->ins.p = cur;
