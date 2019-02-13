@@ -156,11 +156,13 @@ int make_unweighted_matrix(
 
   // Make if not present
   if(!f){
+
     FCAL(
         GENERAL_ERROR, 
         F_CONSTR_UNW_MAT, 
         unweighted_job(in_tree, output_name)
     );
+
     f = fopen(output_name, "r");
   }
   

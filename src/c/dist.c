@@ -334,7 +334,7 @@ double compute_logdet_distance (char ** data, int numSites){
     printf("WARNING\n");
     return -2; // saturated 
   }
-// printf("here\n");
+
   D = -0.5 * log(detP);
 
   for (i=0; i<alphabetSize; i++)

@@ -94,6 +94,7 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
       parse_tree(&meta, &map, master_ml_options)
   );
 
+
   // Initialize growing tree using the first 3 taxa in the ordering
   printf(STATE_INIT_GTREE);
   FCAL(
@@ -273,6 +274,7 @@ int main(int argc, char ** argv){
   int argc_in; // capped at 10000 arguments
   char * argv_in[MAX_NUM_FLAG];
   int i, guide_tree_idx;
+  int just_seen_tree_flag = 0;
   ml_options master_ml_options;
 
   // Prepare master_ml_options
@@ -321,16 +323,27 @@ int main(int argc, char ** argv){
   argc_in = 1;
   argv_in[0] = NULL;
   for(i = 1; i < argc; i++){
+    if(STR_EQ(argv[i - 1], "-t")) just_seen_tree_flag = 1;
     if(STR_EQ(argv[i], "-q") || STR_EQ(argv[i], "-g"))
       i++; //skip these flags
-    else if(master_ml_options.qtree_method == Q_SUBTREE && 
-          STR_EQ(argv[i - 1], "-t"))
+    else if(master_ml_options.qtree_method == Q_SUBTREE 
+        && just_seen_tree_flag == 1)
       argv_in[argc_in++] = argv[guide_tree_idx];
     else
       argv_in[argc_in++] = argv[i];
+    if(just_seen_tree_flag == 1) just_seen_tree_flag = 2;
+  }
+
+  //never seen it
+  if(master_ml_options.qtree_method == Q_SUBTREE && !just_seen_tree_flag){
+    argv_in[argc_in] = malloc(3);
+    argv_in[argc_in][0] = '-'; argv_in[argc_in][1] = 't'; argv_in[argc_in][2] = 0;
+    argc_in++;
+    argv_in[argc_in++] = argv[guide_tree_idx]; 
   }
 
   // Prepare argv to pass into
+
   argv[0] = NULL;
   FCAL(
       GENERAL_ERROR,

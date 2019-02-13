@@ -77,7 +77,7 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, ml_options * options){
       for(i = 0; i < meta->n_taxa; i++){
         meta->dm[i] = SAFE_MALLOC(meta->n_taxa * sizeof(float));
       }
-
+      
       FCAL(
           GENERAL_ERROR,
           F_MK_UNW_MAT_IN_PARSE_TREE,
