@@ -18,7 +18,24 @@ If you want to use the maximum likelihood extension of constraint INC then the f
 4. Extra scripts in the tools folder
 5. RAxML (only if needed to run RAxML)
 
+If you want to use INC by itself, you don't need any other dependency. 
+
+If you want to use constrained INC (INC + constraint trees), you will need:
+1. Extra scripts in the tools folder
+
+Make sure all dependencies are on your PATH variable. One quick and dirty way to do this is to type
+```
+export PATH=$PATH:/path/to/folder/or/file
+```
+where `/path/to/folder/or/file` is the absolute path to the dependency or the folder containing the dependency file. 
+
 ## Installation
+Some compilation flag current does not compile with `clang`. Some machines install `clang` under the alias of `gcc` and thus will mess up the current Makefile. To know whether this happens to your machine, try to run the compilation steps below. If you get an error message that comes from `clang` (eg: `clang: error: unsupported option '-fopenmp'`),  do the following steps to use the correct compiler:
+1. Install the lastest version of `gcc`. For example, at the time of writing this README, the newest version is `gcc-8`.  
+2. Type `export CC=$(which gcc-8)` where `gcc-8` should be replaced with the name of the newest version of `gcc` that you have just installed. 
+
+These steps will affect the `CC` variable in the environment that is used to link the correct compiler in the Makefile
+
 Run `make ml` to generate the binary `ml`, used for INC-ML. The command for INC-ML is 
 ```
 ml -a <input_alignment> -o <output_prefix> -t <initial_tree> -r <recompute_constraint_trees> 
