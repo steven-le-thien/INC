@@ -1,4 +1,4 @@
-### Constraint INC
+### INC
 
 The INC tree building technique is described in `R. Zhang, S. Rao, and T. Warnow (2018). New absolute fast converging phylogeny estimation methods with improved scalability and accuracy. To appear, Proceedings of WABI (Workshop on Algorithms for Bioinformatics) 2018`. It is an absolute fast converging (AFC) method for the problem of estimating the model tree given a distance matrix between the sequences. 
 
