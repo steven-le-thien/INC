@@ -7,6 +7,7 @@
 
 #define INV_SQR  2
 #define INV      1
+#define ZERO_ONE 0
 #define ALL_QUARTET 1
 #define VALID_QUARTET 0
 #define IS_REVOTING 1
