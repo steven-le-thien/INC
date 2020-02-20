@@ -34,7 +34,13 @@ Some compilation flag current does not compile with `clang`. Some machines insta
 1. Install the lastest version of `gcc`. For example, at the time of writing this README, the newest version is `gcc-8`.  
 2. Type `export CC=$(which gcc-8)` where `gcc-8` should be replaced with the name of the newest version of `gcc` that you have just installed. 
 
-These steps will affect the `CC` variable in the environment that is used to link the correct compiler in the Makefile
+These steps will affect the `CC` variable in the environment that is used to link the correct compiler in the Makefile. As of 2020, this step should no longer be necessary and `clang` should do the job. 
+
+There are 3 modes of running for INC, `inc` is the vanilla INC described in
+Zhang, Rao and Warnow; `constraint_inc` is INC with additional constraint trees
+input; and `ml' is INC-ML. A makefile is provided to compile the code according
+to one of the 3 modes. When switching mode, one must run `make clean` before
+compiling to another mode. 
 
 Run `make ml` to generate the binary `ml`, used for INC-ML. The command for INC-ML is 
 ```
