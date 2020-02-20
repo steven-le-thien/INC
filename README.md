@@ -36,12 +36,6 @@ Some compilation flag current does not compile with `clang`. Some machines insta
 
 These steps will affect the `CC` variable in the environment that is used to link the correct compiler in the Makefile. As of 2020, this step should no longer be necessary and `clang` should do the job. 
 
-There are 3 modes of running for INC, `inc` is the vanilla INC described in
-Zhang, Rao and Warnow; `constraint_inc` is INC with additional constraint trees
-input; and `ml' is INC-ML. A makefile is provided to compile the code according
-to one of the 3 modes. When switching mode, one must run `make clean` before
-compiling to another mode. 
-
 Run `make ml` to generate the binary `ml`, used for INC-ML. The command for INC-ML is 
 ```
 ml -a <input_alignment> -o <output_prefix> -t <initial_tree> -r <recompute_constraint_trees> 

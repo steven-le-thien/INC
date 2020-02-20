@@ -17,15 +17,16 @@ ml: SPECCMPL = -D INC_ML_CMPL
 inc: SPECCMPL = -D INC_CMPL 
 constraint_inc: SPECCMPL = -D CINC_CMPL
 
-ml inc constraint_inc: $(OBJECTS)
-	$(CC) $(SPECCMPL) $^ -lm -o $@
-
-$(DIR)/%.o: $(DIR)/%.c
-	$(CC) $(SPECCMPL) -I$(DIR) -c $< -o $@
-
 clean:
-	rm -f $(DIR)/*.o 
+	rm -f $(DIR)/*.o
 	rm -f $(DIR)/*.d
 	rm -f ml
 	rm -f inc
 	rm -f constraint_inc
+
+ml inc constraint_inc: clean $(OBJECTS)
+	$(CC) $(SPECCMPL) $(filter-out $<,$^) -lm -o $@
+
+$(DIR)/%.o: $(DIR)/%.c
+	$(CC) $(SPECCMPL) -I$(DIR) -c $< -o $@
+
