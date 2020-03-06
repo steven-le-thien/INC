@@ -11,13 +11,14 @@
 char STOCK_MSA_NAME[] = "tmp.msa";
 char STOCK_QUARTET_NAME[] = "tmp.quartet";
 
-int match_and_print_msa(char * aln, char ** name_map, int * u);
-int make_quartet(DIST_MOD distance_model);
-int process_quartet(char ** name_map, int * u, int * res);
+int match_and_print_msa(char * tmp, char * aln, char ** name_map, int * u);
+int make_quartet(DIST_MOD distance_model, char * tmp_folder);
+int process_quartet(char * tmp, char ** name_map, int * u, int * res);
 int do_quartet_ll(
     char ** name_map, 
     int * u, 
     DIST_MOD distance_model, 
+    char * tmp_folder,
     int * res, 
     double * M);
 
@@ -48,28 +49,30 @@ int new_quartets_raxml(
   FCAL(
       GENERAL_ERROR,
       F_MATCH_PRINT_IN_NEW_Q_RXML,
-      match_and_print_msa(master_ml_options->input_alignment, name_map, u) 
+      match_and_print_msa(master_ml_options->tmp_folder, master_ml_options->input_alignment, name_map, u) 
   ); 
-
   FCAL(
       GENERAL_ERROR,
       F_MK_Q_IN_NEW_Q_RXML,
-      make_quartet(master_ml_options->distance_model) 
+      make_quartet(
+          master_ml_options->distance_model, 
+          master_ml_options->tmp_folder
+      ) 
   );
-
   FCAL(
       GENERAL_ERROR,
       F_PROCESS_Q_IN_NEW_Q_RXML,
-      process_quartet(name_map, res, u)
+      process_quartet(master_ml_options->tmp_folder, name_map, u, res)
   );
-  
   SYSCAL(
       GENERAL_ERROR, 
       ERR_RM, 
-      "rm %s %s %s", 
+      "rm %s/%s %s/%s %s/RAxML_*", 
+      master_ml_options->tmp_folder,
       STOCK_QUARTET_NAME, 
+      master_ml_options->tmp_folder,
       STOCK_MSA_NAME, 
-      "RAxML_*"
+      master_ml_options->tmp_folder
   ); 
 
   return 0;
@@ -85,87 +88,112 @@ int ml_quartet(
   FCAL(
       GENERAL_ERROR,
       F_MATCH_PRINT_IN_ML_Q,
-      match_and_print_msa(master_ml_options->input_alignment, name_map, u) 
+      match_and_print_msa(master_ml_options->tmp_folder, master_ml_options->input_alignment, name_map, u) 
   ); 
 
   FCAL(
       GENERAL_ERROR,
       F_DO_Q_LL_IN_ML_Q,
-      do_quartet_ll(name_map, u, master_ml_options->distance_model, res, M)
+      do_quartet_ll(name_map, u, master_ml_options->distance_model, master_ml_options->tmp_folder, res, M)
   );
 
   SYSCAL(
       GENERAL_ERROR, 
       ERR_RM, 
-      "rm %s %s %s", 
+      "rm %s/%s %s/%s %s/RAxML_*", 
+      master_ml_options->tmp_folder,
       STOCK_QUARTET_NAME, 
-      STOCK_MSA_NAME, 
-      "RAxML_*"
+      master_ml_options->tmp_folder, 
+      STOCK_MSA_NAME,
+      master_ml_options->tmp_folder
   );
   return 0;
 }
 
-int match_and_print_msa(char * aln, char ** name_map, int * u){
+int match_and_print_msa(char * tmp, char * aln, char ** name_map, int * u){
   FILE * f, * p;
   int i;
+  int print_mode = 0;
 
   char buf[GENERAL_BUFFER_SIZE];
+  char buf2[GENERAL_BUFFER_SIZE];
+  sprintf(buf2, "%s/%s", tmp, STOCK_MSA_NAME);
 
-  f = fopen(STOCK_MSA_NAME, "w");
+  f = fopen(buf2, "w");
   p = SAFE_FOPEN_RD(aln);
 
   while(fscanf(p, "%s", buf) >= 0){
-    for(i = 0; i < QUAD + 1; i++)
-      if(i == QUAD) // no match
-        fscanf(p, "%s", buf);
-      else if(STR_EQ(&buf[1], name_map[u[i]])){
+    for(i = 0; i < 4; i++){
+      if(STR_EQ(&buf[1], name_map[u[i]]))
+        print_mode = 1;
+    }
+    if(print_mode){
+      if(buf[0] == '>'){
+        print_mode = 0;
+        for(i = 0; i < 4; i++){
+          if(STR_EQ(&buf[1], name_map[u[i]]))
+            print_mode = 1;
+        }
+        if(print_mode) fprintf(f, "%s\n", buf);
+      } else 
         fprintf(f, "%s\n", buf);
-        fscanf(p, "%s", buf);
-        fprintf(f, "%s\n", buf);
-      }
+    }
   }
+
   fclose(f);
   fclose(p);
 
   return 0;
 }
 
-int make_quartet(DIST_MOD distance_model){
+int make_quartet(DIST_MOD distance_model, char * tmp_folder){
   char buf[GENERAL_BUFFER_SIZE];
-  FILE * f = SAFE_FOPEN_RD(STOCK_QUARTET_NAME);
+  char msa_path[GENERAL_BUFFER_SIZE];
+  sprintf(msa_path, "%s/%s", tmp_folder, STOCK_MSA_NAME);
 
-  if(f){
-    fclose(f);
-    ASSERT(GENERAL_ERROR, W_TMP_Q_EXIST, 0);
-  } 
+  char quartet_path[GENERAL_BUFFER_SIZE];
+  sprintf(quartet_path, "%s/%s", tmp_folder, STOCK_QUARTET_NAME);
+// 
 
+  // FILE * f = SAFE_FOPEN_RD(quartet_path);
+
+  // if(f){
+  //   fclose(f);
+  //   ASSERT(GENERAL_ERROR, W_TMP_Q_EXIST, 0);
+  // } 
   FCAL(
       GENERAL_ERROR,
       F_RXML_JOB_IN_MAKE_Q,
       raxml_job(
           distance_model, 
+          tmp_folder,
           STOCK_QUARTET_NAME, 
-          STOCK_MSA_NAME, 
-          NULL
+          msa_path, 
+          tmp_folder
       )
   );
 
-  sprintf(buf, "RAxML_bestTree.%s", STOCK_QUARTET_NAME);
+  sprintf(buf, "%s/RAxML_bestTree.%s", tmp_folder, STOCK_QUARTET_NAME);
 
   FCAL(
       GENERAL_ERROR,
       F_RM_LBL_JOB_IN_MAKE_Q,
-      rm_label_job(buf, STOCK_QUARTET_NAME)
+      rm_label_job(buf, quartet_path)
   );
+
   return 0;
 }
 
 
 
 
-int process_quartet(char ** name_map, int * u, int * res){
+int process_quartet(char * tmp_folder, char ** name_map, int * u, int * res){
   char sib[2][GENERAL_BUFFER_SIZE];
-  FILE * f = SAFE_FOPEN_RD(STOCK_QUARTET_NAME);
+
+  char quartet_path[GENERAL_BUFFER_SIZE];
+  sprintf(quartet_path, "%s/%s", tmp_folder, STOCK_QUARTET_NAME);
+
+  FILE * f = SAFE_FOPEN_RD(quartet_path);
   int counter = 0, yes = 0;
   int idx[2], i;
   char cur_char;
@@ -199,7 +227,7 @@ int process_quartet(char ** name_map, int * u, int * res){
     for(idx[i] = 0; idx[i] < QUAD; ++idx[i])
       if(STR_EQ(sib[i], name_map[u[idx[i]]]))
         break;
-
+    
   if(idx[0] == 3)
     *res = idx[1];
   else if(idx[1] == 3)
@@ -215,13 +243,20 @@ int do_quartet_ll(
     char ** name_map, 
     int * u, 
     DIST_MOD distance_model, 
+    char * tmp_folder,
     int * res, 
     double * M)
 {
   int i;
   double ll[3], m;
   char cq[GENERAL_BUFFER_SIZE], buf[GENERAL_BUFFER_SIZE];
-  FILE * f = fopen(STOCK_QUARTET_NAME, "r"); 
+
+  char msa_path[GENERAL_BUFFER_SIZE];
+  sprintf(msa_path, "%s/%s", tmp_folder, STOCK_MSA_NAME);
+
+  char quartet_path[GENERAL_BUFFER_SIZE];
+  sprintf(quartet_path, "%s/%s", tmp_folder, STOCK_QUARTET_NAME);
+  FILE * f = fopen(quartet_path, "r"); 
 
 
   if(f){
@@ -247,9 +282,10 @@ int do_quartet_ll(
       F_GET_LL_IN_DO_Q_LL,
       get_ll_from_raxml(
           distance_model,
+          tmp_folder,
           STOCK_QUARTET_NAME,
-          STOCK_MSA_NAME,
-          NULL, 
+          msa_path,
+          tmp_folder, 
           cq, 
           ll
       )

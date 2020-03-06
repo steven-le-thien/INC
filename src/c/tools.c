@@ -212,13 +212,15 @@ int make_subtree(
     ml_options * master_ml_options, 
     int clear_lab)
 {
-  FCAL(
+  if(clear_lab)
+    FCAL(
       GENERAL_ERROR, 
       F_RMV_LABEL_IN_MAKE_SUBTREE,
-      rm_label_job(label, master_ml_options->init_tree_name)
-  );
+      // rm_label_job(label, master_ml_options->init_tree_name)
+      rm_label_job(master_ml_options->init_tree_name, master_ml_options->init_tree_name)
+    );
 
-  if(clear_lab)
+  //if(clear_lab)
     FCAL(
         GENERAL_ERROR,
         F_RMV_LABEL_IN_MAKE_SUBTREE,
@@ -320,6 +322,7 @@ int make_raxml_constraint(
       GENERAL_ERROR, 
       F_RXML_IN_MK_RXML_CONSTRAINT,
       raxml_job(master_ml_options->distance_model,
+                master_ml_options->tmp_folder,
                   raxml_out_name,
                   msa_name,
                   raxml_dir_name)
@@ -360,22 +363,24 @@ int fasttree_job(DIST_MOD dist_model, char * in_aln, char * out_path)
   return 0;
 }
 
-int fastme_job(char * in_aln, char * out_path)
+int fastme_job(char * tmp_folder, char * in_aln, char * out_path)
 {
   SYSCAL(
       GENERAL_ERROR,
       ERR_FASTA_TO_PHYLIP,
-      "%s %s -o > %s",
+      "%s %s -o > %s/%s",
       fasta_to_phylip_bin,
       in_aln,
+      tmp_folder,
       TMP_FILE1
   );
 
   SYSCAL(
       GENERAL_ERROR,
       ERR_FASTME,
-      "%s -i %s -o %s -m B -n -s -d",
+      "%s -i %s/%s -o %s -m B -n -s -d",
       fastme_bin, 
+      tmp_folder,
       TMP_FILE1,
       out_path
   );
@@ -383,19 +388,21 @@ int fastme_job(char * in_aln, char * out_path)
   SYSCAL(
       GENERAL_ERROR,
       ERR_RM,
-      "rm %s", 
+      "rm %s/%s", 
+      tmp_folder,
       TMP_FILE1
   );
   return 0;
 }
 
-int nj_job(DIST_MOD dist_model, char * in_aln, char * out_path)
+int nj_job(DIST_MOD dist_model, char * tmp_folder, char * in_aln, char * out_path)
 {
   SYSCAL(
       GENERAL_ERROR,
       ERR_NJ_1,
-      "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%s; Quit;\"| %s -n",
+      "echo \"ToNEXUS format=FASTA fromFile=%s toFile=%s/%s; Quit;\"| %s -n",
       in_aln,
+      tmp_folder,
       TMP_FILE1,
       PAUP_bin
   );
@@ -403,8 +410,9 @@ int nj_job(DIST_MOD dist_model, char * in_aln, char * out_path)
   SYSCAL(
       GENERAL_ERROR,
       ERR_NJ_2,
-      "echo \"exe %s; NJ distance=%s showtree=No;savetrees"\
+      "echo \"exe %s/%s; NJ distance=%s showtree=No;savetrees"\
         "file=%s format=newick; Quit;\" | %s -n",
+      tmp_folder,
       TMP_FILE1,
       dist_model == D_JC ? NJ_JC : NJ_LOGDET, 
       out_path, 
@@ -413,7 +421,7 @@ int nj_job(DIST_MOD dist_model, char * in_aln, char * out_path)
   return 0;
 }
 
-int fasttree_initial_tree_job(DIST_MOD dist_model, char * in_aln, char * out_path)
+int fasttree_initial_tree_job(DIST_MOD dist_model, char * tmp_folder, char * in_aln, char * out_path)
 {
   FILE * f, * p;
   char buf[GENERAL_BUFFER_SIZE]; 
@@ -421,14 +429,18 @@ int fasttree_initial_tree_job(DIST_MOD dist_model, char * in_aln, char * out_pat
   SYSCAL(
       GENERAL_ERROR,
       ERR_FT_INIT,
-      "%s -nt %s -quiet -noml -nni 0 -log %s < %s",
+      "%s -nt %s -quiet -noml -nni 0 -log %s/%s < %s",
       FastTree_bin,
       dist_model == D_JC ? FT_JC : FT_GTRGAMMA,
+      tmp_folder,
       TMP_FILE1,
       in_aln
   );
 
-  f = fopen(TMP_FILE1, "r");
+  buf[0] = 0;
+  strcat(buf, tmp_folder);
+  strcat(buf, TMP_FILE1); 
+  f = fopen(buf, "r");
   p = fopen(out_path, "w");
   while(fscanf(f, "%s", buf) >=0){
     if(strcmp("NJ", buf) == 0){
@@ -443,7 +455,8 @@ int fasttree_initial_tree_job(DIST_MOD dist_model, char * in_aln, char * out_pat
   SYSCAL(
       GENERAL_ERROR, 
       ERR_RM, 
-      "rm %s", 
+      "rm %s/%s", 
+      tmp_folder,
       TMP_FILE1
   );
   return 0;
@@ -508,43 +521,46 @@ int rm_label_job(char * in_tree, char * out_path)
 
 int raxml_job(
     DIST_MOD dist_model, 
+    char * tmp_folder,
     char * out_pfx,    
     char * in_seq,     
     char * wd_sfx)          
 {
   // TODO: add length checking
-
   if(wd_sfx)
     SYSCAL(
         GENERAL_ERROR,
         ERR_RXML,
-        "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -p 1 > %s", 
+        "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -p 1 > %s/%s", 
         RAxML_bin, 
         dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
         out_pfx,
         in_seq,
         wd_sfx,
+        tmp_folder,
         TMP_FILE1
     );
   else
     SYSCAL(
         GENERAL_ERROR,
         ERR_RXML,
-        "%s -T 12 --silent -m %s -j -n %s -s %s -p 1 > %s",    
+        "%s -T 12 --silent -m %s -j -n %s -s %s -p 1 > %s/%s",    
         RAxML_bin, 
         dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
         out_pfx, 
         in_seq,
+        tmp_folder,
         TMP_FILE1
     );
 
-  SYSCAL(GENERAL_ERROR, ERR_RM, "rm %s", TMP_FILE1); 
+  SYSCAL(GENERAL_ERROR, ERR_RM, "rm %s/%s", tmp_folder, TMP_FILE1); 
   return 0; 
 }
 
 // This also deletes the initial tree 
 int raxml_with_initial_tree_job(
     DIST_MOD dist_model,
+    char * tmp_folder, 
     char * out_pfx,
     char * in_aln,
     char * out_dir)                            
@@ -552,41 +568,54 @@ int raxml_with_initial_tree_job(
   FCAL(
       GENERAL_ERROR,
       F_FFT_IN_RAXML_W_INIT,
-      fasttree_initial_tree_job(dist_model, in_aln, TMP_FILE1) 
+      fasttree_initial_tree_job(dist_model, tmp_folder, in_aln, TMP_FILE1) 
   );
 
   if(out_dir)
     SYSCAL(
         GENERAL_ERROR,
         ERR_RAXML_W_INIT,
-        "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -t %s -p 1 > %s", 
+        "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -t %s/%s -p 1 > %s/%s", 
         RAxML_bin, 
         dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
         out_pfx,
         in_aln,
         out_dir,
+        tmp_folder,
         TMP_FILE1,
+        tmp_folder,
         TMP_FILE2
     );
   else 
     SYSCAL(
         GENERAL_ERROR,
         ERR_RAXML_W_INIT,
-        "%s -T 12 --silent -m %s -j -n %s -s %s -t %s -p 1 > %s", 
+        "%s -T 12 --silent -m %s -j -n %s -s %s -t %s/%s -p 1 > %s/%s", 
         RAxML_bin, 
         dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
         out_pfx,
         in_aln,
+        tmp_folder,
         TMP_FILE1,
+        tmp_folder,
         TMP_FILE2
     );
 
-  SYSCAL(GENERAL_ERROR, ERR_RM, "rm %s %s", TMP_FILE1, TMP_FILE2); 
+  SYSCAL(
+      GENERAL_ERROR, 
+      ERR_RM, 
+      "rm %s/%s %s/%s", 
+      tmp_folder, 
+      TMP_FILE1, 
+      tmp_folder,
+      TMP_FILE2
+  ); 
   return 0; 
 }
 
 int get_ll_from_raxml(
     DIST_MOD dist_model,
+    char * tmp_folder,
     char * out_pfx,
     char * in_aln,
     char * out_dir, 
@@ -605,6 +634,7 @@ int get_ll_from_raxml(
       F_RXAML_QTREE_IN_GET_LL,
       raxml_with_quartet_tree_job(
           dist_model, 
+          tmp_folder,
           out_pfx,
           in_aln,
           out_dir,
@@ -626,6 +656,7 @@ int get_ll_from_raxml(
 
 int raxml_with_quartet_tree_job(
     DIST_MOD dist_model,
+    char * tmp_folder,
     char * out_pfx,
     char * in_aln,
     char * out_dir,
@@ -633,7 +664,12 @@ int raxml_with_quartet_tree_job(
 {
   FILE * f;
 
-  f = fopen(TMP_FILE1, "w"); // this will overwrite tmp.fast
+  char buf[GENERAL_BUFFER_SIZE];
+  buf[0] = 0;
+  strcat(buf, tmp_folder);
+  strcat(buf, TMP_FILE1);
+
+  f = fopen(buf, "w"); // this will overwrite tmp.fast
   fprintf(f, "%s\n", constraint_quartet); // this may not be secure
   fclose(f);
 
@@ -641,29 +677,33 @@ int raxml_with_quartet_tree_job(
     SYSCAL(
         GENERAL_ERROR,
         ERR_RAXML_QTREE,
-        "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -f N -z %s -p 1 > %s",
+        "%s -T 12 --silent -m %s -j -n %s -s %s -w %s -f N -z %s/%s -p 1 > %s/%s",
         RAxML_bin,  
         dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
         out_pfx,
         in_aln,
         out_dir,
+        tmp_folder,
         TMP_FILE1,
+        tmp_folder,
         TMP_FILE2
     );
   else 
     SYSCAL(
         GENERAL_ERROR,
         ERR_RAXML_QTREE,
-        "%s -T 12 --silent -m %s -j -n %s -s %s -f N -z %s -p 1 > %s",
+        "%s -T 12 --silent -m %s -j -n %s -s %s -f N -z %s/%s -p 1 > %s/%s",
         RAxML_bin,
         dist_model == D_JC ? RAXML_JC : RAXML_GTRGAMMA,
         out_pfx,
         in_aln,
         TMP_FILE1,
-        TMP_FILE2
+        tmp_folder,
+        TMP_FILE2,
+        tmp_folder
     );
 
-  SYSCAL(GENERAL_ERROR, ERR_RM, "rm %s %s", TMP_FILE1, TMP_FILE2); 
+  SYSCAL(GENERAL_ERROR, ERR_RM, "rm %s/%s %s/%s", tmp_folder, TMP_FILE1, tmp_folder, TMP_FILE2); 
   return 0; 
 }
 

@@ -9,6 +9,7 @@
 extern int read_cmd_arg(int argc,char ** argv, ml_options * options);
 extern int read_ml_cmd_arg(int argc,char ** argv, ml_options * options);
 extern int init_ml_options(ml_options * options);
+extern int pass_vote_options(ml_options * master_ml_options, VOTE_GRP * vote);
 
 
 static const char WRONG_ARG_FORMAT[]

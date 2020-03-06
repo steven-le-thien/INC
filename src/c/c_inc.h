@@ -115,6 +115,13 @@ typedef struct ml_options{
   int num_trees;
   char ** tree_names ;
 
+  // Voting
+  int is_revoting; // are we breaking ties with another round of vote
+  int revoting_weight_power;
+  int is_revoting_all_quartet;
+  int weight_power; 
+  int is_all_quartet;
+
   // Use distance matrix 
   int use_distance_matrix;
 
@@ -230,6 +237,13 @@ typedef struct vote{
   S_EDGE ins;      // insertion edge (edge with the most vote), 
               // this follws the growing tree's indexing scheme
   BT * tree;
+
+  // Voting
+  int is_revoting; // are we breaking ties with another round of vote
+  int revoting_weight_power;
+  int is_revoting_all_quartet;
+  int weight_power; 
+  int is_all_quartet;
 
   int   ctree_idx; 
 } VOTE_GRP;

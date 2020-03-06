@@ -46,10 +46,10 @@ int bfs_vote_implementation(
     VOTE_GRP * vote,
     int x,
     double q0,
-    int power,
-    int ** revote_map,
-    int all_quartets,
-    int revoting);
+    // int power,
+    int ** revote_map);
+    // int all_quartets,
+    // int revoting);
 
 int less_than_3_shared_taxa(INC_GRP * meta);
 
@@ -343,7 +343,8 @@ int bfs_vote(
     VOTE_GRP * vote, 
     int i)
 {
-  int * revote_map;
+  int j;
+  int * revote_map = NULL;
   if(vote->st_lca.p == vote->nd_lca.c && 
       vote->st_lca.c == vote->nd_lca.p){ // only 1 edge is valid
     vote->ins.c = vote->st_lca.c;
@@ -351,22 +352,23 @@ int bfs_vote(
     return 0;
   }
   vote->tree = meta->gtree;
-  
-  FCAL(
-      GENERAL_ERROR,
-      F_BFS_VOTE_IMPL_IN_BFS_VOTE,
-      bfs_vote_implementation(
-          meta,
-          map, 
-          vote,
-          mst->prim_ord[i],
-          (double) mst->max_w,
-          INV_SQR,
-          &revote_map,
-          ALL_QUARTET,
-          NO_REVOTING
-      )
-  );
+
+  for(j = 0; j < vote->is_revoting + 1; j++)
+    FCAL(
+        GENERAL_ERROR,
+        F_BFS_VOTE_IMPL_IN_BFS_VOTE,
+        bfs_vote_implementation(
+            meta,
+            map, 
+            vote,
+            mst->prim_ord[i],
+            (double) mst->max_w,
+            // INV_SQR,
+            &revote_map
+            // ALL_QUARTET,
+            // NO_REVOTING
+        )
+    );
 
   free(revote_map);
   return 0;
@@ -514,11 +516,12 @@ int bfs_vote_implementation(
     VOTE_GRP * vote,
     int x,
     double q0,
-    int power,
-    int ** revote_map,
-    int all_quartets,
-    int revoting)
+    // int power,
+    int ** revote_map)
+    // int all_quartets,
+    // int revoting)
 {
+
   // Tree statistics
   BT * tree = meta->gtree;
   int n = tree->n_node;
@@ -537,7 +540,10 @@ int bfs_vote_implementation(
   int adj_idx_a[3];
 
   // Trackers
+  int revoting = revote_map[0] != NULL;
   double max_vote = revoting ? (revote_map[0] ? 0.0 : -10000.0) : 0.0;
+
+
   // Init sequence 
   FCAL(
       GENERAL_ERROR,
@@ -549,7 +555,6 @@ int bfs_vote_implementation(
           queue
       )
   );
-
   FCAL(
       GENERAL_ERROR,
       F_INIT_IN_REVOTE_IN_BFS,
@@ -595,9 +600,9 @@ int bfs_vote_implementation(
             itrnl_vote,
             &max_vote,
             (*revote_map),
-            power,
+            revoting ? vote->revoting_weight_power : vote->weight_power,
             x,
-            all_quartets
+            revoting ? vote->is_revoting_all_quartet : vote->is_all_quartet
         )
     );
 
@@ -614,12 +619,13 @@ int bfs_vote_implementation(
       (*revote_map)[i] = 
           (itrnl_vote[i] - max_vote < EPS) && 
           (itrnl_vote[i] - max_vote > -EPS);
-  else  // others
-    for(i = 0; i < n - 1; i++)
-      (*revote_map)[i] = 
-          ((*revote_map)[i]) && 
-          (itrnl_vote[i] - max_vote < EPS) && 
-          (itrnl_vote[i] - max_vote > -EPS);
+
+  // else  // others
+  //   for(i = 0; i < n - 1; i++)
+  //     (*revote_map)[i] = 
+  //         ((*revote_map)[i]) && 
+  //         (itrnl_vote[i] - max_vote < EPS) && 
+  //         (itrnl_vote[i] - max_vote > -EPS);
 
   return 0;
 }
@@ -808,6 +814,8 @@ int do_quartet(
   BT * tree = meta->gtree;
 
   int quartet_result;
+
+  // printf("revote_power %d all_quartets %d\n", revote_power, all_quartets);
 
   int * gidx_to_master = tree->master_idx_map;
   DIST_MOD distance_model = meta->master_ml_options->distance_model;

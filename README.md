@@ -39,10 +39,10 @@ These steps will affect the `CC` variable in the environment that is used to lin
 Run `make ml` to generate the binary `ml`, used for INC-ML. The command for INC-ML is 
 ```
 ml -a <input_alignment> -o <output_prefix> -t <initial_tree> -r <recompute_constraint_trees> 
-   -d <distance_type> -n <approx_constraint_tree_size> -i <init_tree_method> -c <constraint_tree_method> 
-   -q <quartet_method> -g <guide_tree> -p <temporary_folder_path>
+   -d <distance_type> -s <approx_constraint_tree_size> -i <init_tree_method> -c <constraint_tree_method> 
+   -q <quartet_method> -g <guide_tree> -v <voting protocol> -p <temporary_folder_path>
 ```
-The `-t`, `-c`, `-r`, `-g`, `-i` and `-q` flags to INC-ML is optional, whereas the `-a`, `-o`, `-d`, `-p` and `-n` flags must always be entered. Read the Options field for details of other flags as well as their default values. 
+The `-t`, `-c`, `-r`, `-g`, `-i`, `-v` and `-q` flags to INC-ML is optional, whereas the `-a`, `-o`, `-d`, `-p` and `-s` flags must always be entered. Read the Options field for details of other flags as well as their default values. 
 
 If you want to call `ml` from any directory, make sure they are on your PATH variable (if you are using UNIX-based machine) or equivalent. 
 
@@ -64,13 +64,17 @@ The `-i`, `-o` and `-q` flag is compulsory. `-i` and `-o` takes the full path. `
 2. `-o` specifies output tree. Please specify the full path. Any file with the same name will be overwritten.
 3. `-t` specifies a starting tree for PASTA decomposition. Please specifies the full path. If no `-t` flag is detected, the code will generate a FastTree2 tree as `<output_prefix>first_tree.tree` in the current directory.
 4. `-c` accepts either `no` or `subtree` or `fasttree` or `raxml`. `no` specifies that ML-INC is run without constraint trees (or all constraint trees are singletons). `subtree` specifies that the induced subtree of the initial tree is used as constraint trees. `fasttree` specifies that FastTree2 is run on subalignments to generate the constraint trees. `raxml` specifies that `raxml` is run on subalignments to generate the cosntraint trees. __Default__: `fasttree`.
-5. `-r` accepts either `0` or `1`. If this flag is set to `0` (default), the constraint trees will be constructed and the code will look for `<output_prefix>ctree<number>.tree` in the current directory and parse them as constraint trees. If this flag is set to `1`, the method specified in `-c` (or the default method) is used to compute the constraint trees. __Default__: `1`. 
+5. `-r` accepts either `0` or `1`. If this flag is set to `0`, the constraint trees will **not** be constructed and the code will look for `<output_prefix>ctree<number>.tree` in the current directory and parse them as constraint trees. If this flag is set to `1`, the method specified in `-c` (or the default method) is used to compute the constraint trees. __Default__: `1`. 
 6. `-d` accepts either `logDet` or `K2P` or `JC` or `P`, which are the different distance models. This field must be set.
-7. `-n` accepts a positive number that approximates the constraint tree size. This field must be set. Recommended values is `min(number_of_sequences / 4, 1000)`. 
+7. `-s` accepts a positive number that approximates the constraint tree size. This field must be set. Recommended values is `min(number_of_sequences / 4, 1000)`. 
 8. `-i` accepts either `fasttree` or `raxml` or `nj` or `fastme`, which specifies the method used to construct the initial tree to PASTA decomposition if one does not exist in the working directory.
 9. `-q` accepts either `fpm` or `subtree` or `raxml` or `ml`. `fpm` specifies that Four Point Method on the input distance matrix is used to compute quartet trees. `raxml` specifies that RAxML is evoked on 4 sequences to compute the quartet tree. `ml` specifies that RAxML is evoked on 4 sequences to compute the quartet tree, then change the weighting of the quartet trees to `likelihood_of_best_tree / likelihood_of_second_best_tree`. When `subtree` is used, a 'guide tree' must be specified with `-g`. The code then uses the induced quartet on the guide tree to compute the constraint trees. Weighting still uses the distance matrix. __Default__: `fpm`
 10. `-p` temporary path, currently required in order to not overwrite anything __Default__ : `NULL`
-11. Voting protocol. Work is being done to have a flag for voting protocol. For the time being, go to line 287 of `traversal.c`. There should be a single number on that line. Use `0` if you want `0-1` voting. Use `1` if you want to weight the vote by `1/diam`. Use `2` if you want to weight the vote by `1/diam^2`. __Default__: `2`. There are also options to use another voting round, just uncomment the next function call and change the voting scheme accordingly. 
+11. `-g` guide tree path, only used when `-q` is set to subtree. Quartet
+    trees will then be computed as induced subtree of this guide tree
+__Default__: `NULL`
+12. `-v` accepts `1`, `2.1`, `2.2`, `3`, `4` or `5`. Details of each voting
+    protocol can be found in the INC-ML paper (AlCoB2019). __Default__: `1` 
 
 ## INC_ML outputs
 1. The final tree, as specified in `-o`. 

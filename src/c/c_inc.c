@@ -19,7 +19,7 @@
 
 #define SEED 12345
 
-int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst);
+int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote);
 int init_meta_with_msa(msa_t * msa, INC_GRP * meta, MAP_GRP * map);
 
 
@@ -31,6 +31,9 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
   INC_GRP     meta;
   MAP_GRP     map;
   MST_GRP     mst;
+
+  // Init voting structure
+  VOTE_GRP    vote;
 
   // No distance matrix tmp variables
   msa_t msa;
@@ -103,12 +106,18 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
       init_growing_tree(&meta, &map, &mst)
   );
 
+  FCAL(
+      GENERAL_ERROR,
+      "voting initialization failed in main",
+      pass_vote_options(master_ml_options, &vote)
+  );
+
   // Loop through Prim's ordering
   printf(STATE_BUILD_TREE);
   FCAL(
       GENERAL_ERROR, 
       F_SERIAL_MAIN_LOOP_IN_CINC,
-      serial_main_loop(&meta, &map, &mst)
+      serial_main_loop(&meta, &map, &mst, &vote)
   );
 
   // Report the growing tree
@@ -128,10 +137,9 @@ int constraint_inc_main(int argc, char ** argv, ml_options * master_ml_options){
   return 0;
 }
 
-int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
+int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst, VOTE_GRP * vote){
   int i, j; //loop counter
-  // Init voting structure
-  VOTE_GRP    vote;
+
   printf(ITER_COUNT);
   for(i = 3; i < meta->n_taxa; i++){
     print_inline_iteration(i, j, meta->n_taxa, 3);
@@ -139,31 +147,31 @@ int serial_main_loop(INC_GRP * meta, MAP_GRP * map, MST_GRP * mst){
     FCAL(
         GENERAL_ERROR,
         F_INIT_VOTE_IN_CINC, 
-        init_vote(meta, map, mst, &vote, i)
+        init_vote(meta, map, mst, vote, i)
     );
 
     FCAL(
         GENERAL_ERROR,
         F_FIND_BIPART_IN_CINC, 
-        find_bipartition(meta, map, mst, &vote, i)
+        find_bipartition(meta, map, mst, vote, i)
     );
 
     FCAL(
         GENERAL_ERROR,
         F_FIND_VALID_ST_IN_CINC,
-        find_valid_subtree(meta, map, mst, &vote)
+        find_valid_subtree(meta, map, mst, vote)
     );
 
     FCAL(
         GENERAL_ERROR,
         F_BFS_VOTE_IN_CINC,
-        bfs_vote(meta, map, mst, &vote, i)
+        bfs_vote(meta, map, mst, vote, i)
     );
 
     FCAL(
         GENERAL_ERROR,
         F_ATTACH_IN_CINC,
-        attach_leaf_to_edge(meta, map, mst, &vote, i)
+        attach_leaf_to_edge(meta, map, mst, vote, i)
     );
   }
   printf("\n");

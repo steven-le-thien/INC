@@ -80,24 +80,28 @@ extern int fasttree_job(
 
 extern int raxml_job(
     DIST_MOD dist_model, 
+    char * tmp_folder,
     char * out_pfx,    
     char * in_seq,     
     char * wd_sfx          
 );
 
 extern int fastme_job(
+    char * tmp_folder,
     char * in_aln, 
     char * out_path
 );
 
 extern int nj_job(
     DIST_MOD dist_model, 
+    char * tmp_folder,
     char * in_aln, 
     char * out_path
 );
 
 extern int fasttree_initial_tree_job(
     DIST_MOD dist_model, 
+    char * tmp_folder,
     char * in_aln, 
     char * out_path
 ); 
@@ -118,6 +122,7 @@ extern int rm_label_job(char * in_tree, char * out_path);
 
 extern int raxml_with_initial_tree_job(
     DIST_MOD dist_model,
+    char * tmp_folder,
     char * out_pfx,
     char * in_aln,
     char * out_dir
@@ -125,6 +130,7 @@ extern int raxml_with_initial_tree_job(
 
 extern int get_ll_from_raxml(
     DIST_MOD dist_model,
+    char * tmp_folder,
     char * out_pfx,
     char * in_aln,
     char * out_dir, 
@@ -134,6 +140,7 @@ extern int get_ll_from_raxml(
 
 extern int raxml_with_quartet_tree_job(
     DIST_MOD dist_model,
+    char * tmp_folder, 
     char * out_pfx,
     char * in_aln,
     char * out_dir,
@@ -266,11 +273,11 @@ static const char IN_JC[]
 // Bins
 #if 1
 static const char RAxML_bin[]           
-  = "raxmlHPC-AVX2";
+  = "raxmlHPC-PTHREADS-AVX2";
 static const char FastTree_bin[]        
   = "FastTree"; 
 static const char PAUP_bin[]              
-  = "paup4a164_osx";
+  = "paup4a166_osx";
 static const char constraint_inc_bin[]    
   = "constraint_inc";
 static const char tree_to_dist_bin[]    

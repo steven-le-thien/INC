@@ -1,4 +1,4 @@
-#!/Users/lethien_96/anaconda/bin/python
+#!/usr/bin/python
 
 """
 Build subsets using centroid decomposition from PASTA
@@ -17,15 +17,16 @@ def decompose_trees(tree, max_subset_size):
     """
     next_trees = [tree]
     done_trees = []
+
+
     while len(next_trees) > 0:
         trees = next_trees
         next_trees = []
         for tree in trees:
             t1, t2 = bisect_tree(tree,
                                  breaking_edge_style="centroid")
-            n1 = t1.n_leaves
-            n2 = t2.n_leaves
-
+            no1 = t1.n_leaves
+            no2 = t2.n_leaves
             d_t1 = t1._tree
             d_t2 = t2._tree
             d_t1_mat = d_t1.phylogenetic_distance_matrix()
@@ -42,18 +43,20 @@ def decompose_trees(tree, max_subset_size):
                 for n2 in d_t2.taxon_namespace[i+1:]:
                     diam_t2 = max(diam_t2, d_t2_mat(n1, n2))
 
-            if n1 > max_subset_size:
+
+
+            if no1 > max_subset_size:
                 next_trees.append(t1)
             else:
-                if n1 >= 5:
+                if no1 >= 5:
                     done_trees.append(t1)
                     # print(diam_t1)
                 else:
                     sys.exit("T1 has fewer than 5 leaves!")
-            if n2 > max_subset_size:
+            if no2 > max_subset_size:
                 next_trees.append(t2)
             else:
-                if n2 >= 5:
+                if no2 >= 5:
                     done_trees.append(t2)
                     # print(diam_t2)
                 else:

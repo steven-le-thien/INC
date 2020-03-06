@@ -23,6 +23,16 @@ int parse_ml_arg(
     int content_e, 
     ml_options * ml_options);
 
+int pass_vote_options(ml_options * master_ml_options, VOTE_GRP * vote){
+  vote->is_revoting = master_ml_options->is_revoting;
+  vote->revoting_weight_power = master_ml_options->revoting_weight_power;
+  vote->is_revoting_all_quartet = master_ml_options->is_revoting_all_quartet;
+  vote->weight_power = master_ml_options->weight_power;
+  vote->is_all_quartet = master_ml_options->is_all_quartet;
+
+  return 0;
+}
+
 /* This function takes a point to some ml_options, popularizes its fields and 
  *    set the corresponding values depending on the user input
  * It will also catch errors in incompatible calls
@@ -202,7 +212,46 @@ int parse_ml_arg(char ** argv,
             ml_options->distance_model = i;
       break; 
     case 's':
-        ml_options->ss_threshold = atoi(argv[content_s]);
+      ml_options->ss_threshold = atoi(argv[content_s]);
+      break;
+    case 'v':
+        switch(argv[content_s][0]){
+          case '1':
+            ml_options->is_revoting = 0; 
+            ml_options->weight_power = 0; 
+            ml_options->is_all_quartet = 0; 
+            break;
+
+          case '2':
+            ml_options->is_revoting = 1;
+            ml_options->weight_power = 0; 
+            ml_options->is_all_quartet = 0; 
+
+            ml_options->revoting_weight_power = argv[content_s][2] == '1' ? 1 : 2;
+            ml_options->is_revoting_all_quartet = 0;
+            break;
+
+          case '3':
+            ml_options->is_revoting = 0; 
+            ml_options->weight_power = 2; 
+            ml_options->is_all_quartet = 0;
+            break;
+
+          case '4':
+            ml_options->is_revoting = 1;
+            ml_options->weight_power = 2; 
+            ml_options->is_all_quartet = 0; 
+
+            ml_options->revoting_weight_power = 2;
+            ml_options->is_revoting_all_quartet = 1;
+            break;
+
+          case '5':
+            ml_options->is_revoting = 0; 
+            ml_options->weight_power = 2; 
+            ml_options->is_all_quartet = 1;
+            break; 
+        }
       break;
   } 
   return 0;
@@ -283,6 +332,13 @@ int init_ml_options(ml_options * ml_options){
 
   ml_options->num_trees               = 0;
   ml_options->tree_names              = NULL;
+
+  ml_options->is_revoting             = 0;
+  ml_options->revoting_weight_power   = 0;
+  ml_options->is_revoting_all_quartet = 0;
+  ml_options->weight_power            = 0; 
+  ml_options->is_all_quartet          = 0;
+
 
   ml_options->use_distance_matrix                 = 1;
 
