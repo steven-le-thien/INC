@@ -70,7 +70,7 @@
 
 #define print_inline_iteration(i, j, n, s)\
     do{\
-      if(i % (n / 10) == 0){\
+      if(n > 50 && i % (n / 10) == 0){\
         for(j = 0; j < (i <= n / 10 ? 0 : (int)log10(i - n / 10)) + 4; j++) \
           printf("\b");\
         printf("%d...", i);\

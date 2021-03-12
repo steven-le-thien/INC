@@ -335,8 +335,10 @@ int main(int argc, char ** argv){
     if(STR_EQ(argv[i], "-q") || STR_EQ(argv[i], "-g"))
       i++; //skip these flags
     else if(master_ml_options.qtree_method == Q_SUBTREE 
-        && just_seen_tree_flag == 1)
+        && just_seen_tree_flag == 1){
       argv_in[argc_in++] = argv[guide_tree_idx];
+      argv_in[argc_in++] = argv[i];
+    }
     else
       argv_in[argc_in++] = argv[i];
     if(just_seen_tree_flag == 1) just_seen_tree_flag = 2;
@@ -351,7 +353,6 @@ int main(int argc, char ** argv){
   }
 
   // Prepare argv to pass into
-
   argv[0] = NULL;
   FCAL(
       GENERAL_ERROR,
