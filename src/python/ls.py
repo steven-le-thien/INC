@@ -1,6 +1,7 @@
-from tree import query
+from tree import PNode, PTree
+from queries import query
 from mst import prims_mst
-
+from dist import mat_to_func
 def local_search_with(query_func):
     """
         Using QUERY_FUNC to determine which direction to go locally,
@@ -9,7 +10,7 @@ def local_search_with(query_func):
         interface:
             QUERY_FUNC(insert_leaf, internal_node, D)
     """
-    def local_search(start_leaf, insert_leaf, D):
+    def local_search(insert_leaf, D, start_leaf):
         """
             Starting from START_LEAF in the tree, do local hill climbing search
                 to find the best node,
@@ -37,3 +38,33 @@ def local_search_with(query_func):
         return (curr_node, prev_node)
     return local_search
 
+def LS(names, matrix, start_close=True):
+    """
+        estimate a tree using 'local search', where in each insertion we start at a leaf
+        and use node queries until we're told to backtrack.
+        
+        noisy_dist_matrix - numpy matrix describing interleaf distances
+        start_close - for each leaf to insert, start at the already-inserted leaf D-closest to the insert
+        return - a newick string of the tree
+    """
+    D = mat_to_func(names, matrix)
+    if start_close:
+        _,_,insert_order, start_leaf_order = prims_mst(names,D, True)
+    else:
+        _, _, insert_order = prims_mst(names,D, False)
+
+    names2nodes = dict()
+    for name in insert_order:
+        names2nodes[name] = PNode(name)
+    ptree = PTree(search_fn=local_search_with(query))
+    for i in range(len(insert_order)):
+        next_leaf = names2nodes[insert_order[i]]
+        start_leaf = ptree.get_root()
+        if start_close:
+            if not start_leaf_order[i]:
+                # For the first "None", start_leaf = None
+                start_leaf = None
+            else:
+                start_leaf = names2nodes[start_leaf_order[i]]
+        ptree.insert_leaf(next_leaf, D, start_leaf=start_leaf)
+    return ptree.make_newick_string()

@@ -95,3 +95,7 @@ See the attached LICENSE and COPYRIGHT file for details. Note that some part of 
 
 ## Contact
 The package is under constant development. Contact `thienle2@illinois.edu` for implementation questions/suggestions for the C code. 
+
+## Python Implementation
+
+INC and INC_NJ have been implemented in `python3` and the README is available in the `src/python` folder.
