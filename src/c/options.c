@@ -176,10 +176,12 @@ int parse_ml_arg(char ** argv,
         ml_options->output_prefix = argv[content_s];
       break;
     case 't':
-        ml_options->init_tree_name = argv[content_s];
+        ml_options->init_tree_name = malloc(GENERAL_BUFFER_SIZE * sizeof(char));
+        strcpy(ml_options->init_tree_name, argv[content_s]);
       break;
     case 'g':
-        ml_options->guide_tree_name = argv[content_s];
+        ml_options->guide_tree_name = malloc(GENERAL_BUFFER_SIZE * sizeof(char));
+        strcpy(ml_options->guide_tree_name, argv[content_s]);
       break;    
     case 'm':
         ml_options->init_d_name = argv[content_s];
@@ -307,8 +309,15 @@ int find_arg_index(
           options->tree_names
       );
 
-      for(j = 0; j < options->num_trees; j++)
-        options->tree_names[j] = argv[(*i) + j + 1];
+      for(j = 0; j < options->num_trees; j++){
+        options->tree_names[j] = malloc(GENERAL_BUFFER_SIZE * sizeof(char));
+        ASSERT(
+            MALLOC_ERROR,
+            M_ERR_IN_FIND_ARG_IDX,
+            options->tree_names[j]
+        );
+        strcpy(options->tree_names[j], argv[(*i) + j + 1]);
+      }
       
       (*i) += options->num_trees;
       break;

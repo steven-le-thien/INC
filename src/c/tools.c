@@ -212,13 +212,22 @@ int make_subtree(
     ml_options * master_ml_options, 
     int clear_lab)
 {
-  if(clear_lab)
+  char clean_init_tree_name[GENERAL_BUFFER_SIZE];
+
+
+  strcpy(master_ml_options->init_tree_name, clean_init_tree_name);
+  if(clear_lab){
+    sprintf(clean_init_tree_name, "%s_clean", master_ml_options->init_tree_name);
+
     FCAL(
       GENERAL_ERROR, 
       F_RMV_LABEL_IN_MAKE_SUBTREE,
       // rm_label_job(label, master_ml_options->init_tree_name)
-      rm_label_job(master_ml_options->init_tree_name, master_ml_options->init_tree_name)
+      rm_label_job(master_ml_options->init_tree_name, clean_init_tree_name)
     );
+
+    strcpy(master_ml_options->init_tree_name, clean_init_tree_name);
+  }
 
   //if(clear_lab)
     FCAL(
@@ -263,8 +272,9 @@ int make_nj_constraint(
   FCAL(
       GENERAL_ERROR, 
       F_NJ_IN_MK_NJ_CONSTRAINT,
-      fasttree_job(
+      nj_job(
           master_ml_options->distance_model,
+          master_ml_options->tmp_folder,
           msa_name,
           out_name
       )
@@ -287,8 +297,8 @@ int make_fastme_constraint(
   FCAL(
       GENERAL_ERROR, 
       F_NJ_IN_MK_FASTME_CONSTRAINT,
-      fasttree_job(
-          master_ml_options->distance_model,
+      fastme_job(
+          master_ml_options->tmp_folder,
           msa_name,
           out_name
       )

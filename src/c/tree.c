@@ -66,6 +66,8 @@ void petite_dfs(
  */
 int parse_tree(INC_GRP * meta, MAP_GRP * map, ml_options * options){
   int i;  // loop variable
+  int ctree_idx;
+  char clean_constraint_tree_name[GENERAL_BUFFER_SIZE];
 
   // Init meta's field
   if(meta->master_ml_options->qtree_method == Q_SUBTREE){
@@ -92,7 +94,7 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, ml_options * options){
     }
   } else meta->n_ctree = options->num_trees;
  
-  // printf("wda %d\n", options->num_trees);
+  
 
   // Malloc sequence
   meta->ctree             = SAFE_MALLOC(meta->n_ctree * sizeof(BT *));
@@ -107,20 +109,34 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, ml_options * options){
     map->master_to_gidx[i]      = -1;        
   }
 
-  // Sanitize 
+  // Sanitize
+  
   for(i = 0; i < meta->n_ctree; i++){
     if(meta->master_ml_options->qtree_method == Q_SUBTREE)
-      FCAL(
-          GENERAL_ERROR, 
-          F_RM_LBL_IN_MK_FT_CONSTRAINT,
-          rm_label_job(options->tree_names[i + 1], options->tree_names[i + 1])
-      );
+      ctree_idx = i + 1;
     else 
-      FCAL(
-          GENERAL_ERROR, 
-          F_RM_LBL_IN_MK_FT_CONSTRAINT,
-          rm_label_job(options->tree_names[i], options->tree_names[i])
-      );    
+      ctree_idx = i;
+
+    sprintf(clean_constraint_tree_name, "%s_clean", options->tree_names[ctree_idx]);
+    FCAL(
+        GENERAL_ERROR,
+        "remove label failed in parse trees",
+        rm_label_job(options->tree_names[ctree_idx], clean_constraint_tree_name)
+    );
+    strcpy(options->tree_names[ctree_idx], clean_constraint_tree_name);
+
+    /*if(meta->master_ml_options->qtree_method == Q_SUBTREE)*/
+      /*FCAL(*/
+          /*GENERAL_ERROR, */
+          /*F_RM_LBL_IN_MK_FT_CONSTRAINT,*/
+          /*rm_label_job(options->tree_names[i + 1], options->tree_names[i + 1])*/
+      /*);*/
+    /*else */
+      /*FCAL(*/
+          /*GENERAL_ERROR, */
+          /*F_RM_LBL_IN_MK_FT_CONSTRAINT,*/
+          /*rm_label_job(options->tree_names[i], options->tree_names[i])*/
+      /*);    */
   }
 
   // Call the newick reader

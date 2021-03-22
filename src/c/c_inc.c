@@ -309,8 +309,10 @@ int main(int argc, char ** argv){
   // If it is subtree then make sure that there is a guide tree that follows
   if(master_ml_options.qtree_method == Q_SUBTREE){
     for(i = 0; i < argc; i++)
-      if(argv[i][0] == '-' && argv[i][1] == 'g')
-        master_ml_options.guide_tree_name = argv[i + 1];
+      if(argv[i][0] == '-' && argv[i][1] == 'g'){
+        master_ml_options.guide_tree_name = malloc(GENERAL_BUFFER_SIZE * sizeof(char));
+        strcpy(master_ml_options.guide_tree_name, argv[i + 1]);
+      }
 
     ASSERT(GENERAL_ERROR, F_SUBTREE_NO_GUIDE, master_ml_options.guide_tree_name);
 
