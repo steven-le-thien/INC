@@ -60,6 +60,7 @@ constraint_inc -i <input_distance_matrix> -o <output_prefix> -q <quartet_method>
 The `-i`, `-o` and `-q` flag is compulsory. `-i` and `-o` takes the full path. `-q` takes either `subtree` or `fpm` which corresponds to using subtree of some guide tree as quartets versus using distance matrix and four point condition to determine the correct quartet topology. If `-q` is `subtree`, then `-g` is also compulsory and must be the full path containing the guide tree. If `-q` is `fpm` then any value into `-g` is ignored.
 
 ## INC_ML options
+All trees inputed into the algorithm are expected to be binary trees. Non-binary input trees will cause the algorithm to terminate. 
 1. `-a` specifies input alignment. Please specify the full path.
 2. `-o` specifies output tree. Please specify the full path. Any file with the same name will be overwritten.
 3. `-t` specifies a starting tree for PASTA decomposition. Please specifies the full path. If no `-t` flag is detected, the code will generate a FastTree2 tree as `<output_prefix>first_tree.tree` in the current directory.

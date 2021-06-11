@@ -14,6 +14,48 @@
 // Private functions
 int find_prefix_and_dir_from_path(char *, char *, char *, char *);
 
+
+// A function to check if all input trees are binary. Return 0 if all trees are
+// binary and -1 otherwise.
+int test_binary_trees(int n, char ** filename){
+  char command[GENERAL_BUFFER_SIZE];
+  int i;
+  FILE *f;
+  int res;
+  char tmp[] = "tmp"; 
+
+  strcpy(command, "check_binary.py -t ");
+  for(i = 0; i < n; i++){
+    strcat(command, filename[i]);
+    strcat(command, " ");
+  }
+
+
+  SYSCAL(
+    GENERAL_ERROR,
+    "check binary failed.\n",
+    "%s -o %s", 
+    command,
+    tmp
+  );
+
+  f = fopen("tmp", "r");
+  fscanf(f, "%d", &res);
+  fclose(f);
+
+  SYSCAL(
+      GENERAL_ERROR, 
+      "remove tmp failed in check binary.\n", 
+      "rm %s",
+      tmp);
+
+  ASSERT(GENERAL_ERROR, "nonsensical return value in check library", res == 0 || res == 1); 
+
+  if(res == 0) return -1;
+  else return 0;
+  }
+
+
 // Public functions 
 int constraint_inc(int argc, ml_options * master_ml_options){
   int i, j, read_mode, len;

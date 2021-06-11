@@ -69,6 +69,12 @@ int parse_tree(INC_GRP * meta, MAP_GRP * map, ml_options * options){
   int ctree_idx;
   char clean_constraint_tree_name[GENERAL_BUFFER_SIZE];
 
+  ASSERT(
+      GENERAL_ERROR,
+      "assert failed in parse tree",
+      test_binary_trees(options->num_trees, options->tree_names) == 0
+  ); 
+
   // Init meta's field
   if(meta->master_ml_options->qtree_method == Q_SUBTREE){
     meta->n_ctree = options->num_trees - 1;

@@ -5,6 +5,11 @@
 
 #include "c_inc.h"
 
+extern int test_binary_trees(
+    int n,
+    char ** filename
+);
+
 extern int make_constraint_trees_from_disjoint_subsets(
     int n, 
     msa_t * msa,  
